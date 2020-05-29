@@ -1,0 +1,16 @@
+.DS_STORE
+/jars/
+/plugins/
+
+# Eclipse #
+/.classpath
+/.project
+/.settings/
+/bin/
+
+# Maven #
+/target/
+
+# IntelliJ  #
+.idea/
+SPIM_Registration.iml

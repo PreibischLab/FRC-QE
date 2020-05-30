@@ -38,6 +38,7 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.Pair;
 import net.imglib2.util.Util;
+import net.imglib2.view.Views;
 import net.preibisch.mvrecon.fiji.plugin.util.GUIHelper;
 import net.preibisch.mvrecon.process.export.DisplayImage;
 import net.preibisch.mvrecon.process.quality.FRCRealRandomAccessible;
@@ -49,6 +50,8 @@ public class Estimate_Quality implements PlugIn
 	public static int defaultRFRCDist = 10;
 	public static int defaultFRCStepSize = 1;
 	public static int defaultFFTSize = 256;
+	public static boolean defaultVisualize = false;
+
 	public static long[] defaultMin, defaultMax;
 
 	public static int defaultAreaChoice = -1;
@@ -143,6 +146,7 @@ public class Estimate_Quality implements PlugIn
 		gd.addNumericField( "FFT_size (xy)", defaultFFTSize, 0 );
 		gd.addNumericField( "Step_size (z)", defaultFRCStepSize, 0 );
 		gd.addNumericField( "Relative_FRC_distance (z)", defaultRFRCDist, 0 );
+		gd.addCheckbox( "Visualize result as image", defaultVisualize );
 
 		gd.showDialog();
 		if ( gd.wasCanceled() )
@@ -152,6 +156,7 @@ public class Estimate_Quality implements PlugIn
 		final int fftSize = defaultFFTSize = (int)Math.round( gd.getNextNumber() );
 		final int zStepSize = defaultFRCStepSize = (int)Math.round( gd.getNextNumber() );
 		final int rFRCDist = defaultRFRCDist = (int)Math.round( gd.getNextNumber() );
+		final boolean visualize = defaultVisualize = gd.getNextBoolean();
 
 		if ( areaChoice == 1 && rect == null )
 		{
@@ -177,10 +182,10 @@ public class Estimate_Quality implements PlugIn
 			return;
 		}
 
-		computeRFRC( (RandomAccessibleInterval)ImageJFunctions.wrapReal( imp ), zStepSize, fftSize, rFRCDist );
+		computeRFRC( Views.interval( (RandomAccessibleInterval)ImageJFunctions.wrapReal( imp ), frcInterval), zStepSize, fftSize, rFRCDist, visualize );
 	}
 
-	public < T extends RealType< T > > void computeRFRC( final RandomAccessibleInterval< T > input, final int zStepSize, final int fftSize, final int rFRCDist)
+	public < T extends RealType< T > > void computeRFRC( final RandomAccessibleInterval< T > input, final int zStepSize, final int fftSize, final int rFRCDist, final boolean visualize )
 	{
 		final ArrayList< Point > locations = new ArrayList<>();
 
@@ -238,7 +243,8 @@ public class Estimate_Quality implements PlugIn
 		plot.setLineWidth(2);
 		plot.show();
 
-		DisplayImage.getImagePlusInstance( frc.getRandomAccessibleInterval(), false, "Quality Rendering", Double.NaN, Double.NaN ).show();
+		if ( visualize )
+			DisplayImage.getImagePlusInstance( frc.getRandomAccessibleInterval(), false, "Quality Rendering", Double.NaN, Double.NaN ).show();
 	}
 
 	protected < T extends RealType< T > > Interval interactiveROI( final RandomAccessibleInterval< T > img, final double min, final double max )

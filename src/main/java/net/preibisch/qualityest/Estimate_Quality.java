@@ -69,7 +69,7 @@ public class Estimate_Quality implements PlugIn
 		// map all id's to image title for those who are 3d stacks
 		final String[] imgList =
 				Arrays.stream( idList ).
-					filter( id -> WindowManager.getImage( id ).getStackSize() > 1  ).
+					//filter( id -> WindowManager.getImage( id ).getStackSize() > 1  ). // Cannot check here as id's are mixed up then
 						mapToObj( id -> WindowManager.getImage( id ).getTitle() ).
 							toArray( String[]::new );
 
@@ -97,6 +97,13 @@ public class Estimate_Quality implements PlugIn
 		{
 			IJ.log( "The image has only one slice, cannot perform quality estimation\n"
 					+ " (Please check Image>Properties and set it right if necessary)." );
+			return;
+		}
+
+		if ( imp.getNFrames() > 1 )
+		{
+			IJ.log( "The image has multiple frames, please duplicate a single timepoint to run\n"
+					+ " (Please call Image>Duplicate and select a single timepoint)." );
 			return;
 		}
 

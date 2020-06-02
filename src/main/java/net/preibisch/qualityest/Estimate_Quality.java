@@ -66,7 +66,7 @@ public class Estimate_Quality implements PlugIn
 		// get list of open image stacks
 		final int[] idList = WindowManager.getIDList();
 
-		if ( idList == null || idList.length <= 1 )
+		if ( idList == null || idList.length == 0 )
 		{
 			IJ.error( "You need at least one open 3d image." );
 			return;

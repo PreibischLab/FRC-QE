@@ -246,7 +246,7 @@ public class Estimate_Quality implements PlugIn
 
 		PlotWindow.noGridLines = false; // draw grid lines
 		Plot plot = new Plot("Image Quality Plot","z Position","Quality",x,y);
-		plot.setLimits( 0/*input.min( 2 )*/, input.max( 2 ), minMedian, maxMedian );
+		plot.setLimits( input.min( 2 ), input.max( 2 ), 0/*minMedian*/, maxMedian );
 		plot.setLineWidth(2);
 		plot.show();
 

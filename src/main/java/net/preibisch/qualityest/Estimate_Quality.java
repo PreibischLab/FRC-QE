@@ -66,18 +66,18 @@ public class Estimate_Quality implements PlugIn
 		// get list of open image stacks
 		final int[] idList = WindowManager.getIDList();
 
+		if ( idList == null || idList.length <= 1 )
+		{
+			IJ.error( "You need at least one open 3d image." );
+			return;
+		}
+
 		// map all id's to image title for those who are 3d stacks
 		final String[] imgList =
 				Arrays.stream( idList ).
 					//filter( id -> WindowManager.getImage( id ).getStackSize() > 1  ). // Cannot check here as id's are mixed up then
 						mapToObj( id -> WindowManager.getImage( id ).getTitle() ).
 							toArray( String[]::new );
-
-		if ( imgList.length < 1 )
-		{
-			IJ.error( "You need at least one open 3d image." );
-			return;
-		}
 
 		if ( defaultImg >= imgList.length )
 			defaultImg = 0;

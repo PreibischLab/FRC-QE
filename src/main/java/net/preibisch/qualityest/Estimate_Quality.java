@@ -7,6 +7,9 @@ import java.util.Arrays;
 
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 
+import autopilot.image.DoubleArrayImage;
+import autopilot.measures.implementations.spectral.NormDCTEntropyShannonMedianFiltered;
+import autopilot.measures.implementations.spectral.NormDFTEntropyShannon;
 import bdv.tools.boundingbox.BoxSelectionOptions;
 import bdv.tools.boundingbox.TransformedBoxSelectionDialog;
 import bdv.tools.boundingbox.TransformedBoxSelectionDialog.Result;
@@ -24,16 +27,20 @@ import ij.gui.PlotWindow;
 import ij.gui.Roi;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
+import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.KDTree;
 import net.imglib2.Point;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.converter.Converter;
+import net.imglib2.converter.Converters;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.neighborsearch.NearestNeighborSearch;
 import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.Pair;
@@ -175,7 +182,7 @@ public class Estimate_Quality implements PlugIn
 
 		if ( areaChoice == 0 )
 			frcInterval = new FinalInterval( new long[] { 0, 0, 0 }, new long[] { imp.getWidth() - 1, imp.getHeight() - 1, imp.getStackSize() - 1 } );
-		else if ( areaChoice == 0 )
+		else if ( areaChoice == 1 )
 			frcInterval = new FinalInterval( new long[] { rect.x, rect.y, 0 }, new long[] { rect.x + rect.width - 1, rect.y + rect.height - 1, imp.getStackSize() - 1 } );
 		else
 			frcInterval = interactiveROI( (RandomAccessibleInterval)ImageJFunctions.wrapReal( imp ), imp.getDisplayRangeMin(), imp.getDisplayRangeMax() );
@@ -189,7 +196,69 @@ public class Estimate_Quality implements PlugIn
 			return;
 		}
 
+		computeShannon( Views.interval( (RandomAccessibleInterval)ImageJFunctions.wrapReal( imp ), frcInterval) );
+
 		computeRFRC( Views.interval( (RandomAccessibleInterval)ImageJFunctions.wrapReal( imp ), frcInterval), zStepSize, fftSize, rFRCDist, visualize );
+	}
+
+	public < T extends RealType< T > > void computeShannon( final RandomAccessibleInterval< T > input )
+	{
+		final RandomAccessibleInterval<DoubleType> di = Converters.convert(
+				input,
+				new Converter<T, DoubleType>()
+				{
+					@Override
+					public void convert(T input, DoubleType output) { output.setReal( input.getRealDouble() ); }
+				},
+				new DoubleType() );
+
+		final ResultsTable rt = new ResultsTable();
+		float[] x = new float[ (int)input.dimension( 2 ) ]; // x-coordinates
+		float[] y = new float[ (int)input.dimension( 2 ) ]; // y-coordinates
+
+		double max = -Double.MAX_VALUE;
+		double min = Double.MAX_VALUE;
+
+		IJ.showProgress(0, (int)input.dimension( 2 ) );
+
+		for ( int z = 0; z < input.dimension( 2 ); ++z )
+		{
+			final RandomAccessibleInterval<DoubleType>  slice = Views.hyperSlice(di, 2, z );
+
+			final double[] array = new double[ (int)slice.dimension( 0 ) * (int)slice.dimension( 1 ) ];
+
+			final Cursor<DoubleType> c = Views.flatIterable( slice ).cursor();
+			
+			for ( int i = 0; i < array.length; ++i )
+				array[ i ] = c.next().get();
+
+			//final NormDFTEntropyShannon shannon = new NormDFTEntropyShannon();
+			final NormDCTEntropyShannonMedianFiltered shannon = new NormDCTEntropyShannonMedianFiltered();
+
+			final double value = shannon.computeFocusMeasure( new DoubleArrayImage((int)slice.dimension( 0 ), (int)slice.dimension( 1 ), array ) );
+
+			IJ.showProgress(z, (int)input.dimension( 2 ) );
+
+			min = Math.min( value, min );
+			max = Math.max( value, max );
+
+			x[ (int)z ] = z;
+			y[ (int)z ] = (float)value;
+
+			rt.incrementCounter();
+			rt.addValue( "z", z );
+			rt.addValue( "quality", value );
+		}
+
+		IJ.showProgress(1.0);
+
+		rt.show("Image Quality (Shannon)");
+
+		PlotWindow.noGridLines = false; // draw grid lines
+		Plot plot = new Plot("Image Quality Plot (Shannon)","z Position","Quality",x,y);
+		plot.setLimits( input.min( 2 ), input.max( 2 ), 0/*minMedian*/, max );
+		plot.setLineWidth(2);
+		plot.show();
 	}
 
 	public < T extends RealType< T > > void computeRFRC( final RandomAccessibleInterval< T > input, final int zStepSize, final int fftSize, final int rFRCDist, final boolean visualize )
@@ -245,7 +314,7 @@ public class Estimate_Quality implements PlugIn
 		rt.show("Image Quality");
 
 		PlotWindow.noGridLines = false; // draw grid lines
-		Plot plot = new Plot("Image Quality Plot","z Position","Quality",x,y);
+		Plot plot = new Plot("Image Quality Plot (rFRC)","z Position","Quality",x,y);
 		plot.setLimits( input.min( 2 ), input.max( 2 ), 0/*minMedian*/, maxMedian );
 		plot.setLineWidth(2);
 		plot.show();

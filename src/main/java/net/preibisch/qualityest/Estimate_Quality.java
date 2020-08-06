@@ -8,6 +8,8 @@ import java.util.Arrays;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 
 import autopilot.image.DoubleArrayImage;
+import autopilot.measures.FocusMeasureInterface;
+import autopilot.measures.implementations.spectral.NormDCTEntropyShannon;
 import autopilot.measures.implementations.spectral.NormDCTEntropyShannonMedianFiltered;
 import autopilot.measures.implementations.spectral.NormDFTEntropyShannon;
 import bdv.tools.boundingbox.BoxSelectionOptions;
@@ -61,6 +63,12 @@ public class Estimate_Quality implements PlugIn
 
 	public static long[] defaultMin, defaultMax;
 
+	public static final String[] methodChoices = new String[] {
+			"relative FRC (Fourier Ring Correlation)",
+			"Normalized DCT Entropy (Shannon)",
+			"Normalized DCT Entropy (Shannon), median filtered" };
+	public static int defaultMethodChoice = 0;
+
 	public static int defaultAreaChoice = -1;
 	public static final String[] areaChoices = new String[] {
 			"Entire image",
@@ -92,6 +100,7 @@ public class Estimate_Quality implements PlugIn
 		GenericDialog gd = new GenericDialog( "Quality-Estimation" );
 
 		gd.addChoice( "Image_stack for quality estimation", imgList, imgList[ defaultImg ] );
+		gd.addChoice( "Quality_method", methodChoices, methodChoices[ defaultMethodChoice ] );
 
 		gd.showDialog();
 		if ( gd.wasCanceled() )
@@ -99,6 +108,8 @@ public class Estimate_Quality implements PlugIn
 
 		// don't do it by name as often multiple images have the same name
 		final ImagePlus imp = WindowManager.getImage( idList[ defaultImg = gd.getNextChoiceIndex() ] );
+
+		final int methodChoice = defaultMethodChoice = gd.getNextChoiceIndex();
 
 		if ( imp.getNSlices() == 1 )
 		{
@@ -146,31 +157,31 @@ public class Estimate_Quality implements PlugIn
 
 		gd = new GenericDialog( "Quality-Estimation Paramters" );
 		gd.addChoice( "Area_for_quality estimation", areaChoices, areaChoices[ defaultAreaChoice ] );
-		gd.addMessage( "Note: XY size should be identical across experiments you want to compare.", GUIHelper.mediumstatusfont, Color.RED );
 
-		gd.addMessage(
-				"Entire image: " + imp.getWidth() + "x" + imp.getHeight() + " [x" + imp.getStackSize() + "] px; " +
-				(rect == null ? 
-				"No ROI selected" :
-				"Selected ROI: " + rect.width + "x" + rect.height + " [x" + imp.getStackSize() + "] px" ),
-				GUIHelper.smallStatusFont );
-
-		gd.addMessage( "" );
-
-		gd.addNumericField( "FFT_size (xy)", defaultFFTSize, 0 );
-		gd.addNumericField( "Step_size (z)", defaultFRCStepSize, 0 );
-		gd.addNumericField( "Relative_FRC_distance (z)", defaultRFRCDist, 0 );
-		gd.addCheckbox( "Visualize result as image", defaultVisualize );
+		if ( methodChoice == 0 )
+		{
+			gd.addMessage( "Note: XY size should be identical across experiments you want to compare.", GUIHelper.mediumstatusfont, Color.RED );
+	
+			gd.addMessage(
+					"Entire image: " + imp.getWidth() + "x" + imp.getHeight() + " [x" + imp.getStackSize() + "] px; " +
+					(rect == null ? 
+					"No ROI selected" :
+					"Selected ROI: " + rect.width + "x" + rect.height + " [x" + imp.getStackSize() + "] px" ),
+					GUIHelper.smallStatusFont );
+	
+			gd.addMessage( "" );
+	
+			gd.addNumericField( "FFT_size (xy)", defaultFFTSize, 0 );
+			gd.addNumericField( "Step_size (z)", defaultFRCStepSize, 0 );
+			gd.addNumericField( "Relative_FRC_distance (z)", defaultRFRCDist, 0 );
+			gd.addCheckbox( "Visualize result as image", defaultVisualize );
+		}
 
 		gd.showDialog();
 		if ( gd.wasCanceled() )
 			return;
 
 		final int areaChoice = defaultAreaChoice = gd.getNextChoiceIndex();
-		final int fftSize = defaultFFTSize = (int)Math.round( gd.getNextNumber() );
-		final int zStepSize = defaultFRCStepSize = (int)Math.round( gd.getNextNumber() );
-		final int rFRCDist = defaultRFRCDist = (int)Math.round( gd.getNextNumber() );
-		final boolean visualize = defaultVisualize = gd.getNextBoolean();
 
 		if ( areaChoice == 1 && rect == null )
 		{
@@ -190,19 +201,44 @@ public class Estimate_Quality implements PlugIn
 		if ( frcInterval == null )
 			return;
 
-		if ( frcInterval.dimension( 2 ) < 2 * rFRCDist + 1 )
+		if ( methodChoice == 0 )
 		{
-			IJ.log( "z-size (" + frcInterval.dimension( 2 ) + ") is too small given the relative FRC distance (" + rFRCDist + "), should be at least " + (2 * rFRCDist + 1) );
-			return;
+			final int fftSize = defaultFFTSize = (int)Math.round( gd.getNextNumber() );
+			final int zStepSize = defaultFRCStepSize = (int)Math.round( gd.getNextNumber() );
+			final int rFRCDist = defaultRFRCDist = (int)Math.round( gd.getNextNumber() );
+			final boolean visualize = defaultVisualize = gd.getNextBoolean();
+
+			if ( frcInterval.dimension( 2 ) < 2 * rFRCDist + 1 )
+			{
+				IJ.log( "z-size (" + frcInterval.dimension( 2 ) + ") is too small given the relative FRC distance (" + rFRCDist + "), should be at least " + (2 * rFRCDist + 1) );
+				return;
+			}
+
+			computeRFRC( Views.interval( (RandomAccessibleInterval)ImageJFunctions.wrapReal( imp ), frcInterval), zStepSize, fftSize, rFRCDist, visualize );
+		}
+		else
+		{
+			computeShannon( Views.interval( (RandomAccessibleInterval)ImageJFunctions.wrapReal( imp ), frcInterval), methodChoice );
 		}
 
-		computeShannon( Views.interval( (RandomAccessibleInterval)ImageJFunctions.wrapReal( imp ), frcInterval) );
-
-		computeRFRC( Views.interval( (RandomAccessibleInterval)ImageJFunctions.wrapReal( imp ), frcInterval), zStepSize, fftSize, rFRCDist, visualize );
 	}
 
-	public < T extends RealType< T > > void computeShannon( final RandomAccessibleInterval< T > input )
+	public < T extends RealType< T > > void computeShannon( final RandomAccessibleInterval< T > input, final int methodChoice )
 	{
+		final FocusMeasureInterface measure;
+		final String measureDesc;
+
+		if ( methodChoice == 1 )
+		{
+			measure = new NormDCTEntropyShannon();
+			measureDesc = "DCT (Shannon)";
+		}
+		else
+		{
+			measure = new NormDCTEntropyShannonMedianFiltered();
+			measureDesc = "median DCT (Shannon)";
+		}
+
 		final RandomAccessibleInterval<DoubleType> di = Converters.convert(
 				input,
 				new Converter<T, DoubleType>()
@@ -232,10 +268,7 @@ public class Estimate_Quality implements PlugIn
 			for ( int i = 0; i < array.length; ++i )
 				array[ i ] = c.next().get();
 
-			//final NormDFTEntropyShannon shannon = new NormDFTEntropyShannon();
-			final NormDCTEntropyShannonMedianFiltered shannon = new NormDCTEntropyShannonMedianFiltered();
-
-			final double value = shannon.computeFocusMeasure( new DoubleArrayImage((int)slice.dimension( 0 ), (int)slice.dimension( 1 ), array ) );
+			final double value = measure.computeFocusMeasure( new DoubleArrayImage((int)slice.dimension( 0 ), (int)slice.dimension( 1 ), array ) );
 
 			IJ.showProgress(z, (int)input.dimension( 2 ) );
 
@@ -252,11 +285,11 @@ public class Estimate_Quality implements PlugIn
 
 		IJ.showProgress(1.0);
 
-		rt.show("Image Quality (Shannon)");
+		rt.show("Image Quality (" + measureDesc + ")");
 
 		PlotWindow.noGridLines = false; // draw grid lines
-		Plot plot = new Plot("Image Quality Plot (Shannon)","z Position","Quality",x,y);
-		plot.setLimits( input.min( 2 ), input.max( 2 ), 0/*minMedian*/, max );
+		Plot plot = new Plot("Image Quality Plot (" + measureDesc + ")","z Position","Quality",x,y);
+		plot.setLimits( input.min( 2 ), input.max( 2 ), Math.min( 0, min ), max );
 		plot.setLineWidth(2);
 		plot.show();
 	}

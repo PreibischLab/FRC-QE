@@ -132,5 +132,10 @@
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2-ij</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.github.rwl</groupId>
+			<artifactId>jtransforms</artifactId>
+			<version>2.4.0</version>
+		</dependency>
 	</dependencies>
 </project>

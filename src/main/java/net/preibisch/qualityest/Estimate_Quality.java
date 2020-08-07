@@ -66,7 +66,8 @@ public class Estimate_Quality implements PlugIn
 	public static final String[] methodChoices = new String[] {
 			"relative FRC (Fourier Ring Correlation)",
 			"Normalized DCT Entropy (Shannon)",
-			"Normalized DCT Entropy (Shannon), median filtered" };
+			"Normalized DCT Entropy (Shannon), median filtered",
+			"Normalized DFT Entropy (Shannon)" };
 	public static int defaultMethodChoice = 0;
 
 	public static int defaultAreaChoice = -1;
@@ -233,10 +234,15 @@ public class Estimate_Quality implements PlugIn
 			measure = new NormDCTEntropyShannon();
 			measureDesc = "DCT (Shannon)";
 		}
-		else
+		else if ( methodChoice == 2 )
 		{
 			measure = new NormDCTEntropyShannonMedianFiltered();
 			measureDesc = "median DCT (Shannon)";
+		}
+		else
+		{
+			measure = new NormDFTEntropyShannon();
+			measureDesc = "DFT (Shannon)";
 		}
 
 		final RandomAccessibleInterval<DoubleType> di = Converters.convert(

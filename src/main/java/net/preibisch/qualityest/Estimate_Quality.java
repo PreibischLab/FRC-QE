@@ -65,9 +65,10 @@ public class Estimate_Quality implements PlugIn
 
 	public static final String[] methodChoices = new String[] {
 			"relative FRC (Fourier Ring Correlation)",
-			"Normalized DCT Entropy (Shannon)",
-			"Normalized DCT Entropy (Shannon), median filtered",
-			"Normalized DFT Entropy (Shannon)" };
+			"Shannon Entropy",
+			"Normalized DCT Shannon Entropy",
+			"Normalized DCT Shannon Entropy, median filtered",
+			"Normalized DFT Shannon Entropy" };
 	public static int defaultMethodChoice = 0;
 
 	public static int defaultAreaChoice = -1;
@@ -231,18 +232,23 @@ public class Estimate_Quality implements PlugIn
 
 		if ( methodChoice == 1 )
 		{
-			measure = new NormDCTEntropyShannon();
-			measureDesc = "DCT (Shannon)";
+			measure = null;
+			measureDesc = "Shannon Entropy";
 		}
 		else if ( methodChoice == 2 )
 		{
+			measure = new NormDCTEntropyShannon();
+			measureDesc = "DCT Shannon Entropy";
+		}
+		else if ( methodChoice == 3 )
+		{
 			measure = new NormDCTEntropyShannonMedianFiltered();
-			measureDesc = "median DCT (Shannon)";
+			measureDesc = "median DCT Shannon Entropy";
 		}
 		else
 		{
 			measure = new NormDFTEntropyShannon();
-			measureDesc = "DFT (Shannon)";
+			measureDesc = "DFT Shannon Entropy";
 		}
 
 		final RandomAccessibleInterval<DoubleType> di = Converters.convert(
@@ -274,7 +280,13 @@ public class Estimate_Quality implements PlugIn
 			for ( int i = 0; i < array.length; ++i )
 				array[ i ] = c.next().get();
 
-			final double value = measure.computeFocusMeasure( new DoubleArrayImage((int)slice.dimension( 0 ), (int)slice.dimension( 1 ), array ) );
+			final double value;
+			final DoubleArrayImage im = new DoubleArrayImage((int)slice.dimension( 0 ), (int)slice.dimension( 1 ), array );
+
+			if ( measure == null )
+				value = -im.entropyShannon( true );
+			else
+				value = measure.computeFocusMeasure( im );
 
 			IJ.showProgress(z, (int)input.dimension( 2 ) );
 
@@ -350,7 +362,7 @@ public class Estimate_Quality implements PlugIn
 			rt.addValue( "quality", median );
 		}
 
-		rt.show("Image Quality");
+		rt.show("Image Quality (rFRC)");
 
 		PlotWindow.noGridLines = false; // draw grid lines
 		Plot plot = new Plot("Image Quality Plot (rFRC)","z Position","Quality",x,y);

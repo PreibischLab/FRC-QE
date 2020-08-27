@@ -92,11 +92,13 @@ Once FRC-QE has been calculated for your image stack, two new windows will pop u
 ![Third pop-up](https://github.com/PreibischLab/FRC-QE/blob/master/screenshots/image_3.png)
 
 <br />
+
 This gives you an overview over the image quality across your 3D stack. The x-axis shows the z-position within the stack and the y-axis the corresponding value at that position. You can save this image under ```File > Save```.
 
 <br />
 
 * _**B.	Image Quality table**_
+
 <br />
 
 ![Fourth](https://github.com/PreibischLab/FRC-QE/blob/master/screenshots/image_4.png)

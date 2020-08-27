@@ -105,6 +105,7 @@ This gives you an overview over the image quality across your 3D stack. The x-ax
 
 
 <br />
+
 The second window is a table with all raw values that have been calculated, one value per slice. You can save these values under ```File > Save As```.
 
 <br />
@@ -122,7 +123,7 @@ The FRC-QE is fully scriptable, so that you can run it on multiple images at onc
 If you find this plugin useful please support us by cite our paper:
 <br />
 
-XXX
+TBA
 
 <br />
 

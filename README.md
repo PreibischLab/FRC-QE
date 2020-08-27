@@ -86,11 +86,15 @@ If activated, the plugin will additionally create a new image that displays the 
 Once FRC-QE has been calculated for your image stack, two new windows will pop up:
 
 * _**A.	Image Quality Plot**_
+<br />
 ![Third pop-up](https://github.com/PreibischLab/FRC-QE/blob/master/screenshots/image_3.png)
+<br />
 This gives you an overview over the image quality across your 3D stack. The x-axis shows the z-position within the stack and the y-axis the corresponding value at that position. You can save this image under ```File > Save```.
 
 * _**B.	Image Quality table**_
+<br />
 ![Fourth](https://github.com/PreibischLab/FRC-QE/blob/master/screenshots/image_4.png)
+<br />
 The second window is a table with all raw values that have been calculated, one value per slice. You can save these values under ```File > Save As```.
 
 <br />

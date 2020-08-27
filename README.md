@@ -86,6 +86,7 @@ If activated, the plugin will additionally create a new image that displays the 
 Once FRC-QE has been calculated for your image stack, two new windows will pop up:
 
 * _**A.	Image Quality Plot**_
+
 <br />
 
 ![Third pop-up](https://github.com/PreibischLab/FRC-QE/blob/master/screenshots/image_3.png)

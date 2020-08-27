@@ -44,14 +44,14 @@ If you want to run the algorithm only on a small part of your image, simply draw
 
 Next, go to ```Plugins > FRC-QE```. The following window will show up:
 
-![First pop-up]((https://github.com/PreibischLab/FRC-QE/tree/master/screenshots/image_1.png)
+![First pop-up](https://github.com/PreibischLab/FRC-QE/blob/master/screenshots/image_1.png)
 
 After selecting the image you want to process, you can also chose the method you want to use to assess image quality over your 3D stack. Besides FRC-QE, you can also compare this measure against variations of the images Shannon entropy, an algorithm that has been previously used for image compression and autofocus _(6)_. 
 
 When choosing FRC-QE as quality measure, the next window will look like this:
 
  
-![Second pop-up](https://github.com/PreibischLab/FRC-QE/tree/master/screenshots/image_2.png)
+![Second pop-up](https://github.com/PreibischLab/FRC-QE/blob/master/screenshots/image_2.png)
 
 First, you have to decide on which part of the 3D stack you want to run FRC-QE. You have three options:
 
@@ -86,11 +86,11 @@ If activated, the plugin will additionally create a new image that displays the 
 Once FRC-QE has been calculated for your image stack, two new windows will pop up:
 
 * _**A.	Image Quality Plot**_
-![First pop-up]((https://github.com/PreibischLab/FRC-QE/tree/master/screenshots/image_3.png)
+![Third pop-up](https://github.com/PreibischLab/FRC-QE/blob/master/screenshots/image_3.png)
 This gives you an overview over the image quality across your 3D stack. The x-axis shows the z-position within the stack and the y-axis the corresponding value at that position. You can save this image under ```File > Save```.
 
 * _**B.	Image Quality table**_
-![First pop-up]((https://github.com/PreibischLab/FRC-QE/tree/master/screenshots/image_4.png)
+![Fourth](https://github.com/PreibischLab/FRC-QE/blob/master/screenshots/image_4.png)
 The second window is a table with all raw values that have been calculated, one value per slice. You can save these values under ```File > Save As```.
 
 <br />

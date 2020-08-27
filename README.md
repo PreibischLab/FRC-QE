@@ -100,6 +100,7 @@ This gives you an overview over the image quality across your 3D stack. The x-ax
 
 ![Fourth](https://github.com/PreibischLab/FRC-QE/blob/master/screenshots/image_4.png)
 
+
 <br />
 The second window is a table with all raw values that have been calculated, one value per slice. You can save these values under ```File > Save As```.
 

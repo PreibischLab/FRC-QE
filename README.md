@@ -120,7 +120,7 @@ The FRC-QE is fully scriptable, so that you can run it on multiple images at onc
 
 ### 6.	Citations
 
-If you find this plugin useful please support us by cite our paper:
+If you find this plugin useful please support us by citing our paper:
 <br />
 
 TBA

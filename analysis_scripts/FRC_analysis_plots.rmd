@@ -465,11 +465,11 @@ data_to_plot2_DCT_Shannon_entropy <- data_to_plot %>%
 boxplot_DCT_Shannon_Entropy <- ggplot(data_to_plot2_DCT_Shannon_entropy, aes(y=value,x=protocol,group=protocol,fill=protocol))+
   geom_violin(fill="lightgrey",alpha=0.8,size=0,inherit_aes=FALSE,outlier.shape=NA)+
   geom_boxplot(width=0.25,size=1,alpha=.3,outlier.alpha = 1) +
-  # scale_y_continuous(limits=c(0,max(data_to_plot2_DCT_Shannon_entropy$value + 0.007)))+
-  # geom_signif(comparisons = list(c("Fructose", "ScaleA2"),c("ClearT2","Fructose")), 
-  #             map_signif_level=TRUE,y_position = c(0.029, 0.031),test = "wilcox.test",size=1)+
-  # geom_signif(comparisons = list(c("ClearT2","ScaleA2")),
-              # map_signif_level = TRUE,y_position=c(0.033),test = "wilcox.test",size=1)+
+  scale_y_continuous(limits=c(0,max(data_to_plot2_DCT_Shannon_entropy$value + 0.007)))+
+  geom_signif(comparisons = list(c("Fructose", "ScaleA2"),c("ClearT2","Fructose")),
+              map_signif_level=TRUE,y_position = c(0.015, 0.02),test = "wilcox.test",size=1)+
+  geom_signif(comparisons = list(c("ClearT2","ScaleA2")),
+  map_signif_level = TRUE,y_position=c(0.023),test = "wilcox.test",size=1)+
   labs(x="protocol", y="Entropy") +
   scale_colour_discrete(name = "Organoid ID") +
   theme_bw() +

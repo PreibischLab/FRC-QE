@@ -99,7 +99,7 @@ public class Estimate_Quality implements PlugIn
 		if ( defaultImg >= imgList.length )
 			defaultImg = 0;
 
-		GenericDialog gd = new GenericDialog( "Quality-Estimation" );
+		GenericDialog gd = new GenericDialog( "FRC-QE: 3D Image Quality Estimation" );
 
 		gd.addChoice( "Image_stack for quality estimation", imgList, imgList[ defaultImg ] );
 		gd.addChoice( "Quality_method", methodChoices, methodChoices[ defaultMethodChoice ] );
@@ -216,16 +216,16 @@ public class Estimate_Quality implements PlugIn
 				return;
 			}
 
-			computeRFRC( Views.interval( (RandomAccessibleInterval)ImageJFunctions.wrapReal( imp ), frcInterval), zStepSize, fftSize, rFRCDist, visualize );
+			computeRFRC( Views.interval( (RandomAccessibleInterval)ImageJFunctions.wrapReal( imp ), frcInterval), zStepSize, fftSize, rFRCDist, visualize, imp.getTitle() );
 		}
 		else
 		{
-			computeShannon( Views.interval( (RandomAccessibleInterval)ImageJFunctions.wrapReal( imp ), frcInterval), methodChoice );
+			computeShannon( Views.interval( (RandomAccessibleInterval)ImageJFunctions.wrapReal( imp ), frcInterval), methodChoice, imp.getTitle() );
 		}
 
 	}
 
-	public < T extends RealType< T > > void computeShannon( final RandomAccessibleInterval< T > input, final int methodChoice )
+	public < T extends RealType< T > > void computeShannon( final RandomAccessibleInterval< T > input, final int methodChoice, final String name )
 	{
 		final FocusMeasureInterface measure;
 		final String measureDesc;
@@ -306,13 +306,19 @@ public class Estimate_Quality implements PlugIn
 		rt.show("Image Quality (" + measureDesc + ")");
 
 		PlotWindow.noGridLines = false; // draw grid lines
-		Plot plot = new Plot("Image Quality Plot (" + measureDesc + ")","z Position","Quality",x,y);
+		Plot plot = new Plot("Image Quality (" + measureDesc + ") " + name,"z Position","Quality",x,y);
 		plot.setLimits( input.min( 2 ), input.max( 2 ), Math.min( 0, min ), max );
 		plot.setLineWidth(2);
 		plot.show();
 	}
 
-	public < T extends RealType< T > > void computeRFRC( final RandomAccessibleInterval< T > input, final int zStepSize, final int fftSize, final int rFRCDist, final boolean visualize )
+	public < T extends RealType< T > > void computeRFRC(
+			final RandomAccessibleInterval< T > input,
+			final int zStepSize,
+			final int fftSize,
+			final int rFRCDist,
+			final boolean visualize,
+			final String name )
 	{
 		final ArrayList< Point > locations = new ArrayList<>();
 
@@ -327,7 +333,7 @@ public class Estimate_Quality implements PlugIn
 			for ( final Pair< Long, Long > xy : xyPositions )
 				locations.add( new Point( xy.getA(), xy.getB(), z ) );
 
-		final FRCRealRandomAccessible< T > frc = new FRCRealRandomAccessible< T >( input, locations, fftSize, true, true, null );
+		final FRCRealRandomAccessible< T > frc = new FRCRealRandomAccessible< T >( input, locations, fftSize, true, null );
 
 		final NearestNeighborSearch< FloatType > search = new NearestNeighborSearchOnKDTree<>( new KDTree<>( frc.getQualityList() ) );
 
@@ -365,13 +371,13 @@ public class Estimate_Quality implements PlugIn
 		rt.show("Image Quality (rFRC)");
 
 		PlotWindow.noGridLines = false; // draw grid lines
-		Plot plot = new Plot("Image Quality Plot (rFRC)","z Position","Quality",x,y);
+		Plot plot = new Plot("FRC-QE score " + name,"z Position","Quality",x,y);
 		plot.setLimits( input.min( 2 ), input.max( 2 ), 0/*minMedian*/, maxMedian );
 		plot.setLineWidth(2);
 		plot.show();
 
 		if ( visualize )
-			DisplayImage.getImagePlusInstance( frc.getRandomAccessibleInterval(), false, "Quality Rendering", Double.NaN, Double.NaN ).show();
+			DisplayImage.getImagePlusInstance( frc.getRandomAccessibleInterval(), false, "FRC-QE Rendering " + name, Double.NaN, Double.NaN ).show();
 	}
 
 	protected < T extends RealType< T > > Interval interactiveROI( final RandomAccessibleInterval< T > img, final double min, final double max )
@@ -431,9 +437,11 @@ public class Estimate_Quality implements PlugIn
 		final ImagePlus imp;
 
 		if ( args == null || args.length == 0 )
-			imp = new ImagePlus( "/Users/spreibi/Documents/BIMSB/Publications/NM Perspective Clearing/anisotropic_FRC_example/Fructose_org4.tif" );
+			imp = new ImagePlus( "/Users/spreibi/Downloads/organoid/for friedrich/ang1_ill1.tif" );
 		else
 			imp = new ImagePlus( args[ 0 ] );
+
+		Estimate_Quality.defaultFFTSize = 200;
 
 		imp.show();
 		imp.setSlice( imp.getNSlices() / 2 );

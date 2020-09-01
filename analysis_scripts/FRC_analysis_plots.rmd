@@ -338,7 +338,7 @@ data_to_plot <- data_full %>%
 FRC_plot <- data_to_plot %>%
   filter(measured == "FRC") %>% 
   line_plot(.,"microns_from_start","value","µm inside","FRC-QE score","replicates")+
-    geom_hline(yintercept=30,linetype='dashed',size=0.8,color="black",alpha=0.7)
+    geom_hline(yintercept=15,linetype='dashed',size=0.8,color="black",alpha=0.7)
 
 
 

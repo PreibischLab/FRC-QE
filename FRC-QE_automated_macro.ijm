@@ -85,7 +85,7 @@ function processFile(path) {
 	saveAs("Results", path_file);
 	close("Results");
 	run("Clear Results");
-	close(title);
+	
 	
 	if (entropy) {
 
@@ -141,6 +141,7 @@ function processFile(path) {
 		close(title);
 		print(title + " was processed.");
 	}
+	close(title);
 	print(title + " was processed.");
 }
 

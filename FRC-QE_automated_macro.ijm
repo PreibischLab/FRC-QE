@@ -11,10 +11,8 @@
  // 3. If you want to also calculate Shannon Entropy, please select the corresponding button.
  // 3. A results folder will be created for each image individually (folder has the name of the image).
  // 4. The macro will perform FRC-QE and Shannon entropy measurements (if selected) for all images and save the results as csv. file in the results folder.
+ // 5. A message will show up when all images have been processed.
 
-
-setBatchMode(true);
- 
 
 dir = getDirectory("Choose a Directory ");
 count = 0;
@@ -26,10 +24,12 @@ number_of_files = list.length;
 Dialog.create("FRC-QE macro");
 Dialog.addNumber("Enter the FFT size (i.e. FRC block size) you want to use for all images that will be processed.", 200);
 Dialog.addCheckbox("Should Shannon entropy be calculated?", true);
+Dialog.show();
 
 entropy = Dialog.getCheckbox();
 FFT_size = Dialog.getNumber();
-
+setBatchMode(true);
+ 
 processFiles(dir);
 
 

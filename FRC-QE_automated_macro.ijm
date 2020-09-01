@@ -12,7 +12,8 @@
  // 3. A results folder will be created for each image individually (folder has the name of the image).
  // 4. The macro will perform FRC-QE and Shannon entropy measurements (if selected) for all images and save the results as csv. file in the results folder.
  // 5. A message will show up when all images have been processed.
-
+setBatchMode(true);
+ 
 
 dir = getDirectory("Choose a Directory ");
 count = 0;
@@ -28,8 +29,7 @@ Dialog.show();
 
 entropy = Dialog.getCheckbox();
 FFT_size = Dialog.getNumber();
-setBatchMode(true);
- 
+
 processFiles(dir);
 
 
@@ -85,7 +85,8 @@ function processFile(path) {
 	saveAs("Results", path_file);
 	close("Results");
 	run("Clear Results");
-
+	close(title);
+	
 	if (entropy) {
 
 	

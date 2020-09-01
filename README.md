@@ -65,7 +65,12 @@ First, you have to decide on which part of the 3D stack you want to run FRC-QE. 
 
 * _**FFT size (xy):**_
 
-To better average the FRC within one image plane, we implemented FRC-QE in a block-wise manner, where individual blocks of adjacent planes are compared. By splitting the image into smaller blocks, we diminish the influence of small imaging artifacts on the final result. After calculating the FRC-QE for the individual blocks, we take the median of all blocks within one image as final quality score. The FFT size defines the size of these blocks in pixels. E.g. if you have a 400x400 px image, setting the FFT size to 200, will lead to 4 equally sized blocks of 200x200 px each. Smaller blocks will give more localized quality information, but are also more susceptible to noise. **Note that in order to be able to compare image quality between images, the FFT size has to be the same for all images!**
+To better average the FRC within one image plane, we implemented FRC-QE in a block-wise manner, where individual blocks of adjacent planes are compared. By splitting the image into smaller blocks, we diminish the influence of small imaging artifacts on the final result. After calculating the FRC-QE for the individual blocks, we take the median of all blocks within one image as final quality score. The FFT size defines the size of these blocks in pixels. E.g. if you have a 400x400 px image, setting the FFT size to 200, will lead to 4 equally sized blocks of 200x200 px each. Smaller blocks will give more localized quality 
+information, but are also more susceptible to noise. 
+
+<br />
+
+**Note that in order to be able to compare image quality between images, the FFT size has to be the same for all images!**
 
 * _**Step size (z):**_
 

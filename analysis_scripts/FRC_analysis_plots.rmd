@@ -56,8 +56,8 @@ read_data <- function(files){
   mutate(angle = ifelse(grepl("angle",filename),angle,"both_angles")) %>%
   #extract illumination side
   mutate(illu=gsub(".+illu(.+)\\_angle.+","\\1",filename)) %>%
-  mutate(illu=ifelse(illu == 0, "A",illu)) %>%
-  mutate(illu=ifelse(illu == 1,"B",illu)) %>%
+  mutate(illu=ifelse(illu == 0, "B",illu)) %>%
+  mutate(illu=ifelse(illu == 1,"A",illu)) %>%
   mutate(illu=ifelse(illu == "fused","both_illuminations",illu)) %>%
   #if illumination information is missing in the filename make it "both_illuminations"
   mutate(illu = ifelse(grepl("illu",filename),illu,"both_illuminations")) %>%

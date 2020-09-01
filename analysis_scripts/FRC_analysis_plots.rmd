@@ -30,7 +30,7 @@ library(wesanderson) # shiny colors
 
 ### Select a tab to view it's content   {.tabset}
 
-#### Code
+#### Code to import data
 ```{r, echo=TRUE, warning=FALSE}
 
 
@@ -42,8 +42,8 @@ read_data <- function(files){
   rename_all(tolower) %>%
   #extract protocol from beginning of file name
   mutate(protocol = gsub(".+\\_(.+)\\_org.+","\\1",basename(files))) %>%
-  #extract measurement type
-  mutate(measured = gsub("(^[^_]+).+","\\1",basename(files))) %>% 
+  #extract measurement type from beginning of file name
+  mutate(measured = gsub("(^[^_]+).+","\\1",basename(files))) %>%
   #extract OrganoidID (starting with "org" or "orgconf (for confocal data))
   mutate(orgID = gsub(".+\\_(org\\d+|orgconf\\d+).+","\\1",basename(files))) %>%
   #extract filename
@@ -52,8 +52,15 @@ read_data <- function(files){
   mutate(angle=gsub(".+angle(\\d+).+","\\1",filename)) %>%
   mutate(angle=ifelse(angle == 0, "right",angle)) %>%
   mutate(angle=ifelse(angle == 1,"left",angle)) %>%
-  #if angle is a digit number keep it otherwise make it NA
+  #if angle information is missing in filename make it "both angles"
   mutate(angle = ifelse(grepl("angle",filename),angle,"both_angles")) %>%
+  #extract illumination side
+  mutate(illu=gsub(".+illu(.+)\\_angle.+","\\1",filename)) %>%
+  mutate(illu=ifelse(illu == 0, "A",illu)) %>%
+  mutate(illu=ifelse(illu == 1,"B",illu)) %>%
+  mutate(illu=ifelse(illu == "fused","both_illuminations",illu)) %>%
+  #if illumination information is missing in the filename make it "both_illuminations"
+  mutate(illu = ifelse(grepl("illu",filename),illu,"both_illuminations")) %>%
   #all values (either quality or image feature measurements) should be named "value"
   rename_all(~sub('quality', 'value', .x)) %>%
   rename_all(~sub('mean','value',.x)) %>%
@@ -67,19 +74,19 @@ read_data <- function(files){
 
 data_full <- map_dfr(file.path(here("data"),list_data_csvs),read_data) %>% 
   rename(min_Img = min, max_Img = max) %>%
-  select(protocol,orgID,slice,angle,measured, value,max_Img,min_Img) %>%
+  select(protocol,orgID,slice,angle,illu,measured, value,max_Img,min_Img) %>%
   mutate(measured = ifelse(measured == "Img-features","mean-intensity",measured)) %>%
   group_by(protocol,orgID,angle) %>%
   mutate(max_slice = max(slice)) %>%
   mutate(slice_norm = slice-max_slice/2) %>%
-  group_by(protocol,orgID,angle,measured) %>%
+  group_by(protocol,orgID,angle,illu,measured) %>%
   #contrast is just max minus minimum intensity at a given slice
   mutate(contrast = max_Img - min_Img) %>%
   mutate(contrast_norm = contrast / max(contrast)) %>%
   select(-c(max_Img,min_Img)) %>%
   #normalize all measured values between 0 and 1
   mutate(value_norm = value / max(value)) %>% 
-  group_by(slice,orgID,protocol,angle) %>%
+  group_by(slice,orgID,protocol,angle,illu) %>%
   ungroup() %>%
   arrange(protocol,orgID)
 
@@ -217,7 +224,7 @@ FRC_plot_relative <- data_to_plot %>%
   geom_vline(xintercept=rects$xmin, size=0.3,alpha = 0.15) +
   geom_vline(xintercept=rects$xmax, size=0.3,alpha = 0.15) +
   theme_bw() +
-  ggtitle("Relative FRC") +
+  ggtitle("FRC-QE score") +
   scale_x_continuous(limits= c(min(data_to_plot$slice_norm_micro),max(data_to_plot$slice_norm_micro)),
                      breaks = c(-300,-200,-100,0,100,200,300))+
   theme(plot.title = element_text(size=10))+
@@ -252,7 +259,7 @@ plot
 #### Figure 3 - lightsheet data
 
 ```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=4,fig.width=8}
-
+#define line plot function for the following figures
 line_plot <- function(data_to_plot,X,Y,xlab,ylab,colorby){
   ggplot(data_to_plot, aes_string(x=X,y=Y,group="name"))+
     geom_line(aes_string(color=colorby),size=1) + 
@@ -278,14 +285,14 @@ data_to_plot <- data_full %>%
   filter(name %in% c("ClearT2_org2", "Fructose_org4")) %>% 
   mutate(name = paste0(protocol,"_",orgID)) %>%
   mutate(microns_from_start = slice * stepsize) %>%
-  mutate(angle = ifelse(!grepl("both_angles",angle),angle,"multiview fusion"))
-
-FRC_plot <- data_to_plot %>%
+  mutate(angle = ifelse(!grepl("both_angles",angle),angle,"multiview fusion")) %>%
   filter(measured == "FRC") %>% 
   #filter out slices with value == 0
-  filter(value > 0) %>% 
-  line_plot(.,"slice_norm_micro","value","µm (relative to center)","FRC score (raw)","name") +
-  facet_grid(~angle,scale="free_x")
+  filter(value > 0)
+
+FRC_plot <- line_plot(data_to_plot,"slice_norm_micro","value","µm (relative to center)","FRC-QE score","name") +
+  facet_grid(~angle,scale="free_x") +
+  scale_y_continuous(limits=c(0, max(data_to_plot$value)))
 
 
 #put everything together
@@ -299,7 +306,7 @@ plot <- patch &
               strip.text = element_text(face="bold",size=14)
               ) &
     scale_color_manual(values = wes_palette("Moonrise3")) &
-    geom_vline(xintercept=selected_slices_micron,linetype='dashed',size=0.8,color="red")
+    geom_vline(xintercept=selected_slices_micron,linetype='dashed',size=0.8,color="red") 
 
 ggsave(plot=plot, file="Figure_3_lightsheet.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
 
@@ -330,8 +337,8 @@ data_to_plot <- data_full %>%
 
 FRC_plot <- data_to_plot %>%
   filter(measured == "FRC") %>% 
-  line_plot(.,"microns_from_start","value_norm","µm inside","FRC score (normalized)","replicates")+
-    geom_hline(yintercept=0.5,linetype='dashed',size=0.8,color="black",alpha=0.7)
+  line_plot(.,"microns_from_start","value","µm inside","FRC-QE score","replicates")+
+    geom_hline(yintercept=30,linetype='dashed',size=0.8,color="black",alpha=0.7)
 
 
 
@@ -500,3 +507,41 @@ plot
 
 ```
 
+#### Supp. Figure 3 - Comparing illuminations at different positions
+```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=4,fig.width=8}
+#define line plot function for the following figures
+line_plot <- function(data_to_plot,X,Y,xlab,ylab,colorby){
+  ggplot(data_to_plot, aes_string(x=X,y=Y,group="name"))+
+    geom_line(aes_string(color=colorby),size=1) + 
+    labs(x=xlab, y=ylab) +
+    facet_grid(~measured,scale="free_x")+
+    theme_bw() +
+    theme(legend.position = "top")
+}
+
+data_to_plot <- data_full %>%
+  filter(measured %in% c("FRC-ROI-left","FRC-ROI-right")) %>%
+  mutate(name = paste(measured,illu, sep="_"))
+
+FRC_ROIs_plot <- data_to_plot %>%
+  line_plot(.,"slice_norm_micro","value","test","test1","illu")+
+    labs(y="FRC-QE score",x="µm (relative to center)")
+
+
+patch <- FRC_ROIs_plot
+
+
+#plot
+plot <- patch & 
+    theme(panel.border = element_rect(size=1.5),
+              axis.text = element_text(face="bold",size=12),
+              strip.text = element_text(face="bold",size=14)
+              ) &
+    scale_color_manual(values = wes_palette("Moonrise3"))
+
+ggsave(plot=plot, file="Supp_Figure_3.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
+
+plot
+
+
+```

@@ -20,13 +20,11 @@ library(wesanderson) # shiny colors
 #### Data shown here is all from *Draq5* channel.
 ###### --- 
 ###### 1. Multiview recontruction based on Draq5 signal.
-###### 2. 400x400 bounding box through full z.
+###### 2. 400x400 bounding box through full z (for confocal: 800x800 px).
 ###### 3. Fuse (no downsampling, keeping anisotropy) and save.
 ###### 4. Create new .hdf5 based on this small image and open in new project
-###### 5. FRC (no downsampling) with relative FRC, **FFT size 200**, **stepsize=1** and **not keeping anisotropy** (FFT size 400 for confocal data)
-###### - this will create 4 sub-tiles where FRC is calculated independently
-###### - to assess FRC quality we always take the median of these 4 subtiles
-###### 6. For both Img and FRC measurements: Measurement per slice.
+###### 5. FRC-QE, **FFT size 200**, **stepsize=1** 
+###### 6. For all measurements: Measurement per slice.
 
 ### Select a tab to view it's content   {.tabset}
 
@@ -50,8 +48,8 @@ read_data <- function(files){
   mutate(filename=basename(files)) %>%
   #extract angle
   mutate(angle=gsub(".+angle(\\d+).+","\\1",filename)) %>%
-  mutate(angle=ifelse(angle == 0, "right",angle)) %>%
-  mutate(angle=ifelse(angle == 1,"left",angle)) %>%
+  mutate(angle=ifelse(angle == 0, "180°",angle)) %>%
+  mutate(angle=ifelse(angle == 1,"0°",angle)) %>%
   #if angle information is missing in filename make it "both angles"
   mutate(angle = ifelse(grepl("angle",filename),angle,"both_angles")) %>%
   #extract illumination side
@@ -215,7 +213,6 @@ DCT_Shannon_entropy_plot <- data_to_plot %>%
   geom_vline(xintercept=selected_slices_micron,size=0.15,color="black")
  
 
-
 FRC_plot_relative <- data_to_plot %>%
   filter(measured == "FRC") %>%
   ggplot(., aes_string(x="slice_norm_micro",y="value"))+
@@ -227,6 +224,7 @@ FRC_plot_relative <- data_to_plot %>%
   ggtitle("FRC-QE score") +
   scale_x_continuous(limits= c(min(data_to_plot$slice_norm_micro),max(data_to_plot$slice_norm_micro)),
                      breaks = c(-300,-200,-100,0,100,200,300))+
+  scale_y_continuous(limits=c(0,filter(data_to_plot, measured == "FRC") %>%  pull(value) %>% max()))+
   theme(plot.title = element_text(size=10))+
   geom_vline(xintercept=selected_slices_micron,size=0.15,color="black")
 
@@ -286,12 +284,13 @@ data_to_plot <- data_full %>%
   mutate(name = paste0(protocol,"_",orgID)) %>%
   mutate(microns_from_start = slice * stepsize) %>%
   mutate(angle = ifelse(!grepl("both_angles",angle),angle,"multiview fusion")) %>%
-  filter(measured == "FRC") %>% 
-  #filter out slices with value == 0
-  filter(value > 0)
+  filter(measured == "FRC")
+
+#fixing the order
+data_to_plot$angle_ordered <- factor(data_to_plot$angle, levels=c("0°","multiview fusion", "180°"))
 
 FRC_plot <- line_plot(data_to_plot,"slice_norm_micro","value","µm (relative to center)","FRC-QE score","name") +
-  facet_grid(~angle,scale="free_x") +
+  facet_grid(~angle_ordered,scale="free_x") +
   scale_y_continuous(limits=c(0, max(data_to_plot$value)))
 
 
@@ -337,8 +336,7 @@ data_to_plot <- data_full %>%
 
 FRC_plot <- data_to_plot %>%
   filter(measured == "FRC") %>% 
-  line_plot(.,"microns_from_start","value","µm inside","FRC-QE score","replicates")+
-    geom_hline(yintercept=15,linetype='dashed',size=0.8,color="black",alpha=0.7)
+  line_plot(.,"microns_from_start","value","µm inside","FRC-QE score","replicates")
 
 
 
@@ -452,9 +450,9 @@ boxplot_FRC <- ggplot(data_to_plot2_FRC, aes(y=value,x=protocol,group=protocol,f
   geom_boxplot(width=0.25,size=1,alpha=.3,outlier.alpha = 1) +
   scale_y_continuous(limits=c(0,max(data_to_plot2_FRC$value + 20)))+
   geom_signif(comparisons = list(c("Fructose", "ScaleA2"),c("ClearT2","Fructose")), 
-              map_signif_level=TRUE,y_position = c(74, 81),test = "wilcox.test",size=1)+
+              map_signif_level=TRUE,y_position = c(52, 57),test = "wilcox.test",size=1)+
   geom_signif(comparisons = list(c("ClearT2","ScaleA2")),
-              map_signif_level = TRUE,y_position=c(88),test = "wilcox.test",size=1)+
+              map_signif_level = TRUE,y_position=c(62),test = "wilcox.test",size=1)+
   labs(x="protocol", y="FRC") +
   scale_colour_discrete(name = "Organoid ID") +
   theme_bw() +
@@ -514,14 +512,15 @@ line_plot <- function(data_to_plot,X,Y,xlab,ylab,colorby){
   ggplot(data_to_plot, aes_string(x=X,y=Y,group="name"))+
     geom_line(aes_string(color=colorby),size=1) + 
     labs(x=xlab, y=ylab) +
-    facet_grid(~measured,scale="free_x")+
+    facet_wrap(~measured,scales="free")+
     theme_bw() +
     theme(legend.position = "top")
 }
 
 data_to_plot <- data_full %>%
   filter(measured %in% c("FRC-ROI-left","FRC-ROI-right")) %>%
-  mutate(name = paste(measured,illu, sep="_"))
+  mutate(name = paste(measured,illu, sep="_")) %>%
+  filter(slice_norm_micro < 100 & slice_norm_micro > -100)
 
 FRC_ROIs_plot <- data_to_plot %>%
   line_plot(.,"slice_norm_micro","value","test","test1","illu")+

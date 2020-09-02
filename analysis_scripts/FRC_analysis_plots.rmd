@@ -507,15 +507,6 @@ plot
 
 #### Supp. Figure 3 - Comparing illuminations at different positions
 ```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=4,fig.width=8}
-#define line plot function for the following figures
-line_plot <- function(data_to_plot,X,Y,xlab,ylab,colorby){
-  ggplot(data_to_plot, aes_string(x=X,y=Y,group="name"))+
-    geom_line(aes_string(color=colorby),size=1) + 
-    labs(x=xlab, y=ylab) +
-    facet_wrap(~measured,scales="free")+
-    theme_bw() +
-    theme(legend.position = "top")
-}
 
 data_to_plot <- data_full %>%
   filter(measured %in% c("FRC-ROI-left","FRC-ROI-right")) %>%
@@ -524,7 +515,8 @@ data_to_plot <- data_full %>%
 
 FRC_ROIs_plot <- data_to_plot %>%
   line_plot(.,"slice_norm_micro","value","test","test1","illu")+
-    labs(y="FRC-QE score",x="µm (relative to center)")
+    labs(y="FRC-QE score",x="µm (relative to center)")+
+    facet_wrap(~measured,scales="free")
 
 
 patch <- FRC_ROIs_plot

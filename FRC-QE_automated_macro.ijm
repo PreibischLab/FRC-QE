@@ -13,7 +13,6 @@
  // 4. The macro will perform FRC-QE and Shannon entropy measurements (if selected) for all images and save the results as csv. file in the results folder.
  // 5. A message will show up when all images have been processed.
 setBatchMode(true);
- 
 
 dir = getDirectory("Choose a Directory ");
 count = 0;
@@ -25,10 +24,12 @@ number_of_files = list.length;
 Dialog.create("FRC-QE macro");
 Dialog.addNumber("Enter the FFT size (i.e. FRC block size) you want to use for all images that will be processed.", 200);
 Dialog.addCheckbox("Should Shannon entropy be calculated?", true);
+Dialog.addCheckbox("Should average intensity be calculated?", true);
 Dialog.show();
 
-entropy = Dialog.getCheckbox();
 FFT_size = Dialog.getNumber();
+entropy = Dialog.getCheckbox();
+intensity = Dialog.getCheckbox();
 
 processFiles(dir);
 
@@ -63,8 +64,6 @@ function processFile(path) {
 	 // print the file name
 	print("Now processing :", name);
 	
-	
-	
 	// open the file
 	open(path);
 	directory = File.getParent(path)+"/";
@@ -73,7 +72,7 @@ function processFile(path) {
 	
 	// FRC calculation
 	selectWindow(title);
-	run("Cleared Sample Quality Estimation", "quality_method=[relative FRC (Fourier Ring Correlation)] area_for_quality=[Entire image] fft_size=" + FFT_size + " step_size=1 relative_frc_distance=10");
+	run("FRC-QE: 3D Image Quality Estimation", "quality_method=[relative FRC (Fourier Ring Correlation)] area_for_quality=[Entire image] fft_size=" + FFT_size + " step_size=1 relative_frc_distance=10");
 	close();
 	//create results folder
 	results_folder_path = directory + "/" + name + "/";
@@ -92,7 +91,7 @@ function processFile(path) {
 	
 		// Shannon Entropy
 		selectWindow(title);
-		run("Cleared Sample Quality Estimation", "quality_method=[Shannon Entropy] area_for_quality=[Entire image]");
+		run("FRC-QE: 3D Image Quality Estimation", "quality_method=[Shannon Entropy] area_for_quality=[Entire image]");
 		close();
 		// name of the image and csv generated is set here
 		path_file = results_folder_path+"Shannon-entropy_"+name+".csv";
@@ -104,7 +103,7 @@ function processFile(path) {
 		
 		// DCT Shannon Entropy
 		selectWindow(title);
-		run("Cleared Sample Quality Estimation", "quality_method=[Normalized DCT Shannon Entropy] area_for_quality=[Entire image]");
+		run("FRC-QE: 3D Image Quality Estimation", "quality_method=[Normalized DCT Shannon Entropy] area_for_quality=[Entire image]");
 		close();
 		// name of the image and csv generated is set here
 		path_file = results_folder_path+"DCT-Shannon-entropy_"+name+".csv";
@@ -116,7 +115,7 @@ function processFile(path) {
 		
 		// median DCT Shannon Entropy
 		selectWindow(title);
-		run("Cleared Sample Quality Estimation", "quality_method=[Normalized DCT Shannon Entropy, median filtered] area_for_quality=[Entire image]");
+		run("FRC-QE: 3D Image Quality Estimation", "quality_method=[Normalized DCT Shannon Entropy, median filtered] area_for_quality=[Entire image]");
 		close();
 		// name of the image and csv generated is set here
 		path_file = results_folder_path+"median-DCT-Shannon-entropy_"+name+".csv";
@@ -128,7 +127,7 @@ function processFile(path) {
 		
 		// DFT Shannon Entropy
 		selectWindow(title);
-		run("Cleared Sample Quality Estimation", "quality_method=[Normalized DFT Shannon Entropy] area_for_quality=[Entire image]");
+		run("FRC-QE: 3D Image Quality Estimation", "quality_method=[Normalized DFT Shannon Entropy] area_for_quality=[Entire image]");
 		close();
 		// name of the image and csv generated is set here
 		path_file = results_folder_path+"DFT-Shannon-entropy_"+name+".csv";
@@ -138,11 +137,27 @@ function processFile(path) {
 		close("Results");
 		run("Clear Results");
 		
-		close(title);
-		print(title + " was processed.");
+
 	}
-	close(title);
-	print(title + " was processed.");
+
+	if (intensity) {
+		selectWindow(title);
+		run("Set Measurements...", "mean min stack display invert redirect=None decimal=3");
+		for (n=1; n<=nSlices; n++) {
+			setSlice(n);
+    		run("Measure");
+			}
+ 		updateResults;
+		// name of the image and csv generated is set here
+		path_file = results_folder_path+"Img-features_"+name+".csv";
+		// Save as csv file
+		saveAs("Results", path_file);
+		close("Results");
+		run("Clear Results");
+	}
+	
+close(title);
+print(title + " was processed.");
 }
 
 

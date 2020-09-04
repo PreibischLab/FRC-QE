@@ -15,11 +15,11 @@ library(patchwork) # put plots together
 library(wesanderson) # shiny colors
 ```
 
-### Code by Friedrich Preusser (github.com/Fritze/)
-#### All organoids acquired with Z1 lightsheet (August 2019).
-#### Data shown here is all from *Draq5* channel.
+##### *Code by Friedrich Preusser (github.com/Fritze)*
+##### All organoids acquired with Z1 lightsheet (August 2019).
+##### Data shown here is all from *Draq5* channel (except Supp. Figure 4).
 ###### --- 
-###### 1. Multiview recontruction based on Draq5 signal.
+###### 1. Multiview recontruction based on Draq5 signal (nuclei as interest points).
 ###### 2. 400x400 bounding box through full z (for confocal: 800x800 px).
 ###### 3. Fuse (no downsampling, keeping anisotropy) and save.
 ###### 4. Create new .hdf5 based on this small image and open in new project
@@ -59,6 +59,9 @@ read_data <- function(files){
   mutate(illu=ifelse(illu == "fused","both_illuminations",illu)) %>%
   #if illumination information is missing in the filename make it "both_illuminations"
   mutate(illu = ifelse(grepl("illu",filename),illu,"both_illuminations")) %>%
+  #extract staining type 
+  #if staining information is missing in the filename make it "draq5"
+  mutate(staining = ifelse(grepl("mito",filename),"mitotracker","draq5")) %>%
   #all values (either quality or image feature measurements) should be named "value"
   rename_all(~sub('quality', 'value', .x)) %>%
   rename_all(~sub('mean','value',.x)) %>%
@@ -72,19 +75,18 @@ read_data <- function(files){
 
 data_full <- map_dfr(file.path(here("data"),list_data_csvs),read_data) %>% 
   rename(min_Img = min, max_Img = max) %>%
-  select(protocol,orgID,slice,angle,illu,measured, value,max_Img,min_Img) %>%
+  select(protocol,orgID,slice,angle,illu,staining,measured, value,max_Img,min_Img) %>%
   mutate(measured = ifelse(measured == "Img-features","mean-intensity",measured)) %>%
-  group_by(protocol,orgID,angle) %>%
+  group_by(protocol,orgID,illu,angle) %>%
   mutate(max_slice = max(slice)) %>%
   mutate(slice_norm = slice-max_slice/2) %>%
-  group_by(protocol,orgID,angle,illu,measured) %>%
+  group_by(protocol,orgID,angle,illu,staining,measured) %>%
   #contrast is just max minus minimum intensity at a given slice
   mutate(contrast = max_Img - min_Img) %>%
   mutate(contrast_norm = contrast / max(contrast)) %>%
   select(-c(max_Img,min_Img)) %>%
   #normalize all measured values between 0 and 1
   mutate(value_norm = value / max(value)) %>% 
-  group_by(slice,orgID,protocol,angle,illu) %>%
   ungroup() %>%
   arrange(protocol,orgID)
 
@@ -152,6 +154,8 @@ rects <- data.frame(xmin = c(boundaries_micron[1],boundaries_micron[2],boundarie
 
 #filter data for plots
 data_to_plot <- data_full %>%
+  #only draq5 staining
+  filter(staining == "draq5") %>%
   #only multiview reconstructed images
   filter(angle == "both_angles") %>%
   #make name
@@ -276,6 +280,8 @@ unfused_examples <- data_full %>%
 selected_slices_micron <- c(0,200)
 
 data_to_plot <- data_full %>%
+  #only draq5 staining
+  filter(staining == "draq5") %>%
   mutate(name = paste0(protocol,"_",orgID)) %>%
   filter(name %in% unfused_examples) %>%
   filter(!grepl("ScaleA2",name)) %>% 
@@ -382,7 +388,12 @@ replicates_and_corresponding_orgIDs <- data.frame(protocol = c("ClearT2","ClearT
 
 data_to_plot <- data_full %>%
   left_join(replicates_and_corresponding_orgIDs,by=c("orgID","protocol")) %>%
+  #only fused angles
   filter(angle == "both_angles") %>%
+  #only both illuminations
+  filter(illu == "both_illuminations") %>%
+  #only draq5 staining
+  filter(staining == "draq5") %>%
   mutate(name = paste0(protocol,"_",orgID)) %>%
   #filter out confocal data
   filter(!grepl("orgconf",orgID))
@@ -434,6 +445,12 @@ set.seed(2020)
 #take data_to_plot dataframe from previous chunk
 #and select 200 slices per experiment (x 3 replicates x 3 protocols = 1800 slices in total)
 selected_slices <- data_to_plot %>%
+  #only fused angles
+  filter(angle == "both_angles") %>%
+  #only both illuminations
+  filter(illu == "both_illuminations") %>%
+  #only draq5 staining
+  filter(staining == "draq5") %>%
   mutate(name_slice = paste0(name,"_",slice)) %>%
   group_by(orgID,protocol) %>%
   sample_n(200) %>%
@@ -505,7 +522,7 @@ plot
 
 ```
 
-#### Supp. Figure 3 - Comparing illuminations at different positions
+#### Supp. Figure 3 - Comparing illuminations
 ```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=4,fig.width=8}
 
 data_to_plot <- data_full %>%
@@ -514,9 +531,8 @@ data_to_plot <- data_full %>%
   filter(slice_norm_micro < 100 & slice_norm_micro > -100)
 
 FRC_ROIs_plot <- data_to_plot %>%
-  line_plot(.,"slice_norm_micro","value","test","test1","illu")+
-    labs(y="FRC-QE score",x="µm (relative to center)")+
-    facet_wrap(~measured,scales="free")
+  line_plot(.,"slice_norm_micro","value","µm (relative to center)","FRC-QE score","illu")+
+  facet_wrap(~measured,scales="free")
 
 
 patch <- FRC_ROIs_plot
@@ -531,6 +547,40 @@ plot <- patch &
     scale_color_manual(values = wes_palette("Moonrise3"))
 
 ggsave(plot=plot, file="Supp_Figure_3.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
+
+plot
+
+
+```
+
+#### Supp. Figure 4 - Mitotracker staining
+```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=4,fig.width=12}
+
+data_to_plot <- data_full %>%
+  left_join(replicates_and_corresponding_orgIDs,by=c("orgID","protocol")) %>%
+  filter(staining == "mitotracker") %>%
+  filter(measured == "FRC") %>%
+  mutate(name = paste(protocol,orgID,staining,sep="_"))
+
+FRC_ROIs_plot <- data_to_plot %>%
+  line_plot(.,"slice_norm_micro","value","µm (relative to center)","FRC-QE score","replicates")+
+  facet_wrap(~protocol,scales="free")
+
+
+patch <- FRC_ROIs_plot
+
+
+#plot
+plot <- patch & 
+    theme(panel.border = element_rect(size=1.5),
+              axis.text = element_text(face="bold",size=12),
+              strip.text = element_text(face="bold",size=14)
+              ) &
+    scale_x_continuous(limits= c(min(data_to_plot$slice_norm_micro),max(data_to_plot$slice_norm_micro)),
+                     breaks = c(-300,-150,0,150,300)) &   
+    scale_color_manual(values = wes_palette("Moonrise3"))
+
+ggsave(plot=plot, file="Supp_Figure_4.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
 
 plot
 

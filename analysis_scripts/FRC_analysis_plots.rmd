@@ -553,7 +553,7 @@ plot
 
 ```
 
-#### Supp. Figure 4 - Mitotracker staining
+#### Supp. Figure 5 - Mitotracker staining
 ```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=4,fig.width=12}
 
 data_to_plot <- data_full %>%
@@ -580,7 +580,7 @@ plot <- patch &
                      breaks = c(-300,-150,0,150,300)) &   
     scale_color_manual(values = wes_palette("Moonrise3"))
 
-ggsave(plot=plot, file="Supp_Figure_4.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=12)
+ggsave(plot=plot, file="Supp_Figure_5.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=12)
 
 plot
 

@@ -553,36 +553,3 @@ plot
 
 ```
 
-#### Supp. Figure 5 - Mitotracker staining
-```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=4,fig.width=12}
-
-data_to_plot <- data_full %>%
-  left_join(replicates_and_corresponding_orgIDs,by=c("orgID","protocol")) %>%
-  filter(staining == "mitotracker") %>%
-  filter(measured == "FRC") %>%
-  mutate(name = paste(protocol,orgID,staining,sep="_"))
-
-FRC_ROIs_plot <- data_to_plot %>%
-  line_plot(.,"slice_norm_micro","value","µm (relative to center)","FRC-QE score","replicates")+
-  facet_wrap(~protocol,scales="free")
-
-
-patch <- FRC_ROIs_plot
-
-
-#plot
-plot <- patch & 
-    theme(panel.border = element_rect(size=1.5),
-              axis.text = element_text(face="bold",size=12),
-              strip.text = element_text(face="bold",size=14)
-              ) &
-    scale_x_continuous(limits= c(min(data_to_plot$slice_norm_micro),max(data_to_plot$slice_norm_micro)),
-                     breaks = c(-300,-150,0,150,300)) &   
-    scale_color_manual(values = wes_palette("Moonrise3"))
-
-ggsave(plot=plot, file="Supp_Figure_5.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=12)
-
-plot
-
-
-```

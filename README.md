@@ -65,13 +65,13 @@ First, you have to decide on which part of the 3D stack you want to run FRC-QE. 
 
 * _**FFT size (xy):**_
 
-To better average the FRC within one image plane, we implemented FRC-QE in a block-wise manner, where individual blocks of adjacent planes are compared. By splitting the image into smaller blocks, we diminish the influence of small imaging artifacts on the final result. After calculating the FRC-QE for the individual blocks, we take the median of all blocks within one image as final quality score. The FFT size defines the size of these blocks in pixels. E.g. if you have a 400x400 px image, setting the FFT size to 200, will lead to 4 equally sized blocks of 200x200 px each. Smaller blocks will give more localized quality 
+To better average the FRC within one image plane, we implemented FRC-QE in a block-wise manner, where individual blocks of planes adjacent to the plane of interest are compared. By splitting the image into smaller blocks, we diminish the influence of small imaging artifacts on the final result. After calculating the FRC-QE for the individual blocks, we take the median of all blocks within one image as final quality score. The FFT size defines the size of these blocks in pixels. E.g. if you have a 400x400 px image, setting the FFT size to 200, will lead to 4 equally sized blocks of 200x200 px each. Smaller blocks will give more localized quality 
 information, but are also more susceptible to noise. 
 **Note that in order to be able to compare image quality between images, the FFT size has to be the same for all images!**
 
 * _**Step size (z):**_
 
-The step size defines the number of slices that will be used for the analysis. Default is 1, meaning that all slices will be used. If you put the value to 10, only every 10th slice will be correlated to its adjacent slices.
+The step size defines the number of slices that will be used for the analysis. Default is 1, meaning that all slices will be used. If you put the value to 10, only every 10th slice will be used as reference.
 
 * _**Relative FRC distance:**_
 

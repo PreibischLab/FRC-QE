@@ -120,7 +120,7 @@ data_full <- data_full %>%
 
 
 #### Plot for Figure 2
-```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.width=12}
+```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=3,fig.width=12}
 
 #select organoid to plot
 selected_organoid <- "ScaleA2_org2"
@@ -249,7 +249,7 @@ plot <- patch & theme(panel.border = element_rect(size=2),
               )
 
 
-ggsave(plot=plot, file="Figure_2_lineplots.png", type = "cairo-png",  bg = "transparent",dpi = 300,width=12)
+ggsave(plot=plot, file="Figure_2_lineplots.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=7,width=12)
 
 
 plot

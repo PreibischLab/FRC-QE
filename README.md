@@ -34,7 +34,7 @@ The FRC-QE plugin is part of the BigStitcher update site that can be downloaded 
 The source code is available on [GitHub](https://github.com/PreibischLab/quality-estimation). If you encounter bugs or want to report a feature request, please report everything there.
 
 <br />
-Test data we acquired to benchmark the method can be downloaded [here](https://bit.ly.com/FRC-QE_raw_data).
+Test data we acquired to benchmark the method can be downloaded [here](https://www.bit.ly/FRC-QE_raw_data).
 <br />
 <br />
 

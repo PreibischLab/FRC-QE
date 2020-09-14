@@ -129,7 +129,9 @@ The FRC-QE is fully scriptable, so that you can run it on multiple images at onc
 If you find this plugin useful please support us by citing our paper:
 <br />
 
-TBA
+FRC-QE: A robust and comparable 3D microscopy image quality metric for cleared organoids
+Friedrich Preusser, Natália dos Santos, Jörg Contzen, Harald Stachelscheid, Érico Tosoni Costa, Philipp Mergenthaler, Stephan Preibisch
+bioRxiv 2020.09.10.291286; doi: https://doi.org/10.1101/2020.09.10.291286 
 
 <br />
 

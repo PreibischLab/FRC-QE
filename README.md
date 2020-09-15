@@ -29,7 +29,7 @@ We base our algorithm on previous work regarding the use of Fourier ring correla
 
 ### 2.	Download
 
-The FRC-QE plugin is part of the BigStitcher update site that can be downloaded via the Fiji Updater. Go to ```Help > Update …```, click ```Manage update sites``` and select BigStitcher in the list. The click ```“Apply changes”``` and restart Fiji. You will now find the FRC-QE plugin under ```Plugins```.
+The FRC-QE plugin is part of the BigStitcher update site that can be downloaded via the Fiji Updater. Go to ```Help > Update …```, click ```Manage update sites``` and select BigStitcher in the list. Then click ```“Apply changes”``` and restart Fiji. You will now find the FRC-QE plugin under ```Plugins```.
 
 The source code is available on [GitHub](https://github.com/PreibischLab/quality-estimation). If you encounter bugs or want to report a feature request, please report everything there.
 

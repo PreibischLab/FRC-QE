@@ -42,7 +42,15 @@ Test data that we acquired to benchmark the method can be downloaded [here](http
 
 ### 3.	Running FRC-QE
 
-<img src="https://github.com/PreibischLab/FRC-QE/blob/master/screenshots/video1.png" alt="https://vimeo.com/458161930" width="512"/>
+<br />
+
+_**Overview video**_
+
+<br />
+
+<a href="https://vimeo.com/458161930"><img src="https://github.com/PreibischLab/FRC-QE/blob/master/screenshots/video1.png" alt="https://vimeo.com/458161930" width="512"/></a>
+
+<br />
 
 For FRC-QE to run properly, you first need to open a three-dimensional image stack in Fiji.
 If you want to run the algorithm only on a small part of your image, simply draw a rectangular ROI around the region you want to quantify. This can be helpful when the image data is particularly large or contains imaging artifacts you want to exclude from the analysis.
@@ -118,6 +126,12 @@ The second window is a table with all raw values that have been calculated, one 
 
 <br />
 <br />
+
+_**Example video comparing FRC for two cleared organoids**_
+
+<br />
+
+<a href="https://vimeo.com/458136065"><img src="https://github.com/PreibischLab/FRC-QE/blob/master/screenshots/video2.png" alt="https://vimeo.com/458161930" width="512"/></a>
 
 ### 5.	Automating FRC-QE
 

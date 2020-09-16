@@ -5,6 +5,14 @@
 
 </div>
 
+_**If you find this plugin useful, please support our work by citing the corresponding paper:**_
+
+<br />
+
+_**FRC-QE: A robust and comparable 3D microscopy image quality metric for cleared organoids**_
+Friedrich Preusser*, Natália dos Santos*, Jörg Contzen, Harald Stachelscheid, Érico Tosoni Costa, Philipp Mergenthaler, Stephan Preibisch
+bioRxiv 2020.09.10.291286; doi: https://doi.org/10.1101/2020.09.10.291286 
+
 ### Content
 
 * _**1.	Introduction & Overview**_
@@ -12,7 +20,8 @@
 * _**3.	Running FRC-QE**_
 * _**4. Output**_
 * _**5.	Automating FRC-QE**_
-* _**6.	Citations**_
+* _**6.	Background**_
+
 <br />
 <br />
 
@@ -140,18 +149,7 @@ The FRC-QE is fully scriptable, so that you can run it on multiple images at onc
 <br />
 <br />
 
-### 6.	Citations
-
-If you find this plugin useful please support us by citing our paper:
-<br />
-
-FRC-QE: A robust and comparable 3D microscopy image quality metric for cleared organoids
-Friedrich Preusser*, Natália dos Santo*, Jörg Contzen, Harald Stachelscheid, Érico Tosoni Costa, Philipp Mergenthaler, Stephan Preibisch
-bioRxiv 2020.09.10.291286; doi: https://doi.org/10.1101/2020.09.10.291286 
-
-<br />
-
-#### Background:
+#### 6. Background:
 
 * *(1) Heel, Marin Van. “Similarity Measures between Images.” Ultramicroscopy 21, no. 1 (1987): 95–100. https://doi.org/10.1016/0304-3991(87)90010-6.*
 

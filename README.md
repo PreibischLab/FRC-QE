@@ -5,7 +5,7 @@
 
 </div>
 
-_**If you find this plugin useful, please support our work by citing the corresponding paper:**_
+_**For further details have a look at the paper:**_
 
 <br />
 

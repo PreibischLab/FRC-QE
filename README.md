@@ -44,7 +44,7 @@ Test data that we acquired to benchmark the method can be downloaded [here](http
 
 <br />
 
-_**Overview video**_
+_**Tutorial video**_
 
 <br />
 

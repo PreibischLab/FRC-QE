@@ -33,7 +33,6 @@ library(wesanderson) # shiny colors
 
 
 list_data_csvs <- list.files(here("data"),".+csv$",include.dirs= FALSE)
-offset_rollingmedian <- 51
 
 read_data <- function(files){
   read.csv(files) %>%
@@ -119,7 +118,7 @@ data_full <- data_full %>%
 
 
 
-#### Plot for Figure 2
+#### Plot for Figure 2 - version 1
 ```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=3,fig.width=12}
 
 #select organoid to plot
@@ -214,7 +213,7 @@ DCT_Shannon_entropy_plot <- data_to_plot %>%
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         plot.title = element_text(size=10))+
-  geom_vline(xintercept=selected_slices_micron,size=0.15,color="black")
+  #geom_vline(xintercept=selected_slices_micron,size=0.15,color="black")
  
 
 FRC_plot_relative <- data_to_plot %>%
@@ -250,6 +249,78 @@ plot <- patch & theme(panel.border = element_rect(size=2),
 
 
 ggsave(plot=plot, file="Figure_2_lineplots.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=7,width=12)
+
+
+plot
+```
+
+#### Plot for Figure 2 - version 2
+```{r, echo=TRUE, warning=FALSE,dpi = 600,fig.height=5,fig.width=10}
+
+#select organoid to plot
+selected_organoid <- "ScaleA2_org2"
+boundaries <- c(15,70,210,260)
+
+selected_slices <- c(7,60,134,220)
+
+
+boundaries_micron <- filter(data_full,slice %in% boundaries) %>%
+  #make name
+  mutate(name = paste0(protocol,"_",orgID)) %>%
+  #only the organoid we want to plot
+  filter(name == selected_organoid) %>%
+  distinct(slice_norm_micro) %>%
+  pull(slice_norm_micro)
+
+#dataframe describing edge locations
+rects <- data.frame(xmin = c(boundaries_micron[1],boundaries_micron[2],boundaries_micron[3]),
+                    xmax = c(boundaries_micron[2],boundaries_micron[3],boundaries_micron[4]),
+                    ymin = -Inf,  
+                    ymax = Inf,
+                    fill = c( wes_palette("Moonrise3")[3], wes_palette("Moonrise3")[1], wes_palette("Moonrise3")[3]))
+
+#filter data for plots
+data_to_plot <- data_full %>%
+  #only draq5 staining
+  filter(staining == "draq5") %>%
+  #only multiview reconstructed images
+  filter(angle == "both_angles") %>%
+  #make name
+  mutate(name = paste0(protocol,"_",orgID)) %>%
+  #only the organoid we want to plot
+  filter(name == selected_organoid)  %>%
+  filter(measured %in% c("mean-intensity", "DCT-Shannon-entropy","FRC"))
+
+all_plot <- ggplot(data_to_plot, aes_string(x="slice_norm_micro",y="value_norm",color="measured"))+
+  # geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill), inherit.aes = FALSE, alpha = 0.15) +
+  geom_line(aes(color=measured),size=1.5)  +
+  geom_vline(xintercept=rects$xmin, size=0.3,alpha = 0.15) +
+  geom_vline(xintercept=rects$xmax, size=0.3,alpha = 0.15) +
+  theme_bw() +
+  labs(y = "value (normalized)")+
+  scale_x_continuous(limits = c(min(data_to_plot$slice_norm_micro),max(data_to_plot$slice_norm_micro)),
+                     breaks = c(-300,-200,-100,0,100,200,300))+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        plot.title = element_text(size=10))
+
+
+
+
+
+#plot
+plot <- all_plot & theme(panel.border = element_rect(size=2),
+              axis.ticks = element_line(colour = "black", size = 1.5),
+              axis.text = element_text(face="bold",size=12),
+              panel.background = element_rect(fill = "transparent"), # bg of the panel
+              plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+              panel.grid.major = element_blank(), # get rid of major grid
+              panel.grid.minor = element_blank(), # get rid of minor grid
+              ) &
+        scale_color_manual(values = wes_palette("Darjeeling1"))
+
+
+ggsave(plot=plot, file="Figure_2_lineplots_v2.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=3,width=10)
 
 
 plot
@@ -553,3 +624,29 @@ plot
 
 ```
 
+
+```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=8,fig.width=16}
+
+# library(reshape2)
+data_to_plot <- data_full %>%
+  left_join(replicates_and_corresponding_orgIDs,by=c("orgID","protocol")) %>%
+  mutate(name = paste(protocol, orgID, sep="_")) %>%
+  filter(protocol == "ScaleA2") %>%
+  filter(measured == "BRISQUE" | measured == "FRC") %>%
+  filter(angle == "both_angles") %>%
+  filter(illu == "both_illuminations") %>%
+  filter(slice_norm_micro < 100 & slice_norm_micro > -100)
+
+s <- filter(data_to_plot, measured == "FRC")
+max(s$value)
+
+ggplot(data_to_plot, aes(y=value, x=slice_norm_micro, color=replicates))+
+  geom_line(size=1.25)+
+  facet_wrap(~measured, scales="free_y")+
+  theme_classic()+
+   scale_color_manual(values = wes_palette("Moonrise3"))+
+  expand_limits(y = 0)+
+  ggsave(file="FRC-brisque_comparison_ScaleA2.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
+
+
+```

@@ -44,7 +44,7 @@ The source code is available on [GitHub](https://github.com/PreibischLab/quality
 
 <br />
 
-Test data that we acquired to benchmark the method can be downloaded [here](https://www.bit.ly/FRC-QE_raw_data).
+Test data that we acquired to benchmark the method can be downloaded [here](https://www.bit.ly/FRC-QE_example_data).
 
 <br />
 <br />

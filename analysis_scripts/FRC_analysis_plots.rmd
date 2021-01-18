@@ -17,14 +17,12 @@ library(wesanderson) # shiny colors
 
 ##### *Code by Friedrich Preusser (github.com/Fritze)*
 ##### All organoids acquired with Z1 lightsheet (August 2019).
-##### Data shown here is all from *Draq5* channel (except Supp. Figure 4).
+##### Data shown here is all from *Draq5* channel.
 ###### --- 
 ###### 1. Multiview recontruction based on Draq5 signal (nuclei as interest points).
 ###### 2. 400x400 bounding box through full z (for confocal: 800x800 px).
-###### 3. Fuse (no downsampling, keeping anisotropy) and save.
-###### 4. Create new .hdf5 based on this small image and open in new project
-###### 5. FRC-QE, **FFT size 200**, **stepsize=1** 
-###### 6. For all measurements: Measurement per slice.
+###### 3. FRC-QE, **FFT size 200**, **stepsize=1** 
+###### 4. For all measurements: Measurement per slice.
 
 ### Select a tab to view it's content   {.tabset}
 
@@ -116,152 +114,14 @@ data_full <- data_full %>%
 ```
 
 
-
-
-#### Plot for Figure 2 - version 1
-```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=3,fig.width=12}
-
-#select organoid to plot
-selected_organoid <- "ScaleA2_org2"
-boundaries <- c(15,70,210,260)
-
-selected_slices <- c(7,60,134,220)
-
-
-boundaries_micron <- filter(data_full,slice %in% boundaries) %>%
-  #make name
-  mutate(name = paste0(protocol,"_",orgID)) %>%
-  #only the organoid we want to plot
-  filter(name == selected_organoid) %>%
-  distinct(slice_norm_micro) %>%
-  pull(slice_norm_micro)
-
-selected_slices_micron <- filter(data_full,slice %in% selected_slices) %>%
-  #make name
-  mutate(name = paste0(protocol,"_",orgID)) %>%
-  #only the organoid we want to plot
-  filter(name == selected_organoid) %>%
-  distinct(slice_norm_micro) %>%
-  pull(slice_norm_micro)
-
-#dataframe describing edge locations
-rects <- data.frame(xmin = c(boundaries_micron[1],boundaries_micron[2],boundaries_micron[3]),
-                    xmax = c(boundaries_micron[2],boundaries_micron[3],boundaries_micron[4]),
-                    ymin = -Inf,  
-                    ymax = Inf,
-                    fill = c( wes_palette("Moonrise3")[3], wes_palette("Moonrise3")[1], wes_palette("Moonrise3")[3]))
-
-#filter data for plots
-data_to_plot <- data_full %>%
-  #only draq5 staining
-  filter(staining == "draq5") %>%
-  #only multiview reconstructed images
-  filter(angle == "both_angles") %>%
-  #make name
-  mutate(name = paste0(protocol,"_",orgID)) %>%
-  #only the organoid we want to plot
-  filter(name == selected_organoid) 
-
-intensity_plot <- data_to_plot %>%
-  filter(measured == "mean-intensity") %>% 
-  ggplot(., aes_string(x="slice_norm_micro",y="value"))+
-  # geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill), inherit.aes = FALSE, alpha = 0.15) +
-  geom_line(aes(color=name),size=1.5,color="black")  +
-  geom_vline(xintercept=rects$xmin, size=0.3,alpha = 0.15) +
-  geom_vline(xintercept=rects$xmax, size=0.3,alpha = 0.15) +
-  theme_bw() +
-  labs(y = "pixel\nintensity")+
-  ggtitle("intensity") +
-  scale_x_continuous(limits = c(min(data_to_plot$slice_norm_micro),max(data_to_plot$slice_norm_micro)),
-                     breaks = c(-300,-200,-100,0,100,200,300))+
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        plot.title = element_text(size=10))+
-  geom_vline(xintercept=selected_slices_micron,size=0.15,color="black")
-
-
-contrast_plot <- data_to_plot %>%
-  filter(measured == "mean-intensity") %>% 
-  ggplot(., aes_string(x="slice_norm_micro",y="contrast"))+
-  # geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill), inherit.aes = FALSE, alpha = 0.15) +
-  geom_line(aes(color=name),size=1.5,color="black")  +
-  geom_vline(xintercept=rects$xmin, size=0.3,alpha = 0.15) +
-  geom_vline(xintercept=rects$xmax, size=0.3,alpha = 0.15) +
-  theme_bw() +
-  labs(y="contrast")+
-  ggtitle("Contrast (raw)") +
-  scale_x_continuous(limits= c(min(data_to_plot$slice_norm_micro),max(data_to_plot$slice_norm_micro)),
-                     breaks = c(-300,-200,-100,0,100,200,300))+
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        plot.title = element_text(size=10))+
-  geom_vline(xintercept=selected_slices_micron,size=0.15,color="black")
-
-
-DCT_Shannon_entropy_plot <- data_to_plot %>%
-  filter(measured == "DCT-Shannon-entropy") %>%
-  ggplot(., aes_string(x="slice_norm_micro",y="value"))+
-  #geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill), inherit.aes = FALSE, alpha = 0.15) +
-  geom_line(aes(color=name),size=1.5,color="black")  +
-  geom_vline(xintercept=rects$xmin, size=0.3,alpha = 0.15) +
-  geom_vline(xintercept=rects$xmax, size=0.3,alpha = 0.15) +
-  theme_bw() +
-  labs(y="DCT shannon entropy",x="µm (relative to center)") +
-  ggtitle("DCT shannon entropy") +
-  scale_x_continuous(limits= c(min(data_to_plot$slice_norm_micro),max(data_to_plot$slice_norm_micro)),
-                     breaks = c(-300,-200,-100,0,100,200,300))+
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        plot.title = element_text(size=10))+
-  #geom_vline(xintercept=selected_slices_micron,size=0.15,color="black")
- 
-
-FRC_plot_relative <- data_to_plot %>%
-  filter(measured == "FRC") %>%
-  ggplot(., aes_string(x="slice_norm_micro",y="value"))+
-  #geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill), inherit.aes = FALSE, alpha = 0.15) +
-  geom_line(aes(color=name),size=1.5,color="black")  +
-  geom_vline(xintercept=rects$xmin, size=0.3,alpha = 0.15) +
-  geom_vline(xintercept=rects$xmax, size=0.3,alpha = 0.15) +
-  theme_bw() +
-  ggtitle("FRC-QE score") +
-  scale_x_continuous(limits= c(min(data_to_plot$slice_norm_micro),max(data_to_plot$slice_norm_micro)),
-                     breaks = c(-300,-200,-100,0,100,200,300))+
-  scale_y_continuous(limits=c(0,filter(data_to_plot, measured == "FRC") %>%  pull(value) %>% max()))+
-  theme(plot.title = element_text(size=10))+
-  geom_vline(xintercept=selected_slices_micron,size=0.15,color="black")
-
-
-
-
-
-#put all plots together
-patch <- (intensity_plot  / contrast_plot  / DCT_Shannon_entropy_plot / FRC_plot_relative )
-
-#plot
-plot <- patch & theme(panel.border = element_rect(size=2),
-              axis.text = element_text(face="bold",size=12),
-              panel.background = element_rect(fill = "transparent"), # bg of the panel
-              plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
-              panel.grid.major = element_blank(), # get rid of major grid
-              panel.grid.minor = element_blank(), # get rid of minor grid
-              )
-
-
-ggsave(plot=plot, file="Figure_2_lineplots.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=7,width=12)
-
-
-plot
-```
-
-#### Plot for Figure 2 - version 2
+#### Plot for APPLICATION NOTE Figure 1
 ```{r, echo=TRUE, warning=FALSE,dpi = 600,fig.height=5,fig.width=10}
 
 #select organoid to plot
 selected_organoid <- "ScaleA2_org2"
 boundaries <- c(15,70,210,260)
 
-selected_slices <- c(7,60,134,220)
+# selected_slices <- c(7,60,134,220)
 
 
 boundaries_micron <- filter(data_full,slice %in% boundaries) %>%
@@ -320,18 +180,15 @@ plot <- all_plot & theme(panel.border = element_rect(size=2),
         scale_color_manual(values = wes_palette("Darjeeling1"))
 
 
-ggsave(plot=plot, file="Figure_2_lineplots_v2.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=3,width=10)
+ggsave(plot=plot, file="AN_Figure_1_lineplots.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=3,width=10)
 
 
-plot
 ```
 
 
-
-
-#### Figure 3 - lightsheet data
-
+#### Supplemental Figure 4 - Comparing illuminations
 ```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=4,fig.width=8}
+
 #define line plot function for the following figures
 line_plot <- function(data_to_plot,X,Y,xlab,ylab,colorby){
   ggplot(data_to_plot, aes_string(x=X,y=Y,group="name"))+
@@ -341,6 +198,38 @@ line_plot <- function(data_to_plot,X,Y,xlab,ylab,colorby){
     theme_bw() +
     theme(legend.position = "top")
 }
+
+data_to_plot <- data_full %>%
+  filter(measured %in% c("FRC-ROI-left","FRC-ROI-right")) %>%
+  mutate(name = paste(measured,illu, sep="_")) %>%
+  filter(slice_norm_micro < 100 & slice_norm_micro > -100)
+
+FRC_ROIs_plot <- data_to_plot %>%
+  line_plot(.,"slice_norm_micro","value","µm (relative to center)","FRC-QE score","illu")+
+  facet_wrap(~measured,scales="free")
+
+
+patch <- FRC_ROIs_plot
+
+
+#plot
+plot <- patch & 
+    theme(panel.border = element_rect(size=1.5),
+              axis.text = element_text(face="bold",size=12),
+              strip.text = element_text(face="bold",size=14)
+              ) &
+    scale_color_manual(values = wes_palette("Moonrise3"))
+
+ggsave(plot=plot, file="S4_illuminations.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
+
+plot
+
+
+```
+
+
+#### Supplemental Figure S5 - Multi-view quality estimation
+```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=4,fig.width=8}
 
 unfused_examples <- data_full %>%
   mutate(name = paste0(protocol,"_",orgID)) %>%
@@ -384,13 +273,13 @@ plot <- patch &
     scale_color_manual(values = wes_palette("Moonrise3")) &
     geom_vline(xintercept=selected_slices_micron,linetype='dashed',size=0.8,color="red") 
 
-ggsave(plot=plot, file="Figure_3_lightsheet.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
+ggsave(plot=plot, file="S5_lightsheet.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
 
 plot
 
 ```
 
-#### Figure 4 - confocal data
+#### Supplemental Figure S6 - Confocal microscopy
 ```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=4,fig.width=8}
 
 replicates_and_corresponding_orgIDs <- data.frame(protocol =
@@ -429,7 +318,7 @@ plot <- patch &
               ) &
     scale_color_manual(values = wes_palette("Moonrise3"))
 
-ggsave(plot=plot, file="Figure_3_confocal.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
+ggsave(plot=plot, file="S6_confocal.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
 
 plot
 
@@ -437,9 +326,7 @@ plot
 
 
 
-
-
-#### Line Plots for Figure 4
+#### Supplemental Figure S7 - Comparing across protocols
 ```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=8,fig.width=16}
 
 selected_slices_micron <- c(-200,0)
@@ -502,13 +389,13 @@ plot <- patch &
     scale_color_manual(values = wes_palette("Moonrise3")) &
     geom_vline(xintercept=selected_slices_micron,linetype='dashed',size=0.8,color="red")
 
-ggsave(plot=plot, file="Figure_4_lineplots.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=8,width=16)
+ggsave(plot=plot, file="S7_lineplots.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=8,width=16)
 
 plot
 
 ```
 
-#### Box Plot for Figure 4
+#### Box Plot for Supplemental Figure 7
 ```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=3.5,fig.width=7}
 #make sampling reproducible
 set.seed(2020)
@@ -577,7 +464,7 @@ plot <- boxplot_FRC & theme(panel.border = element_rect(size=1.5),
               legend.key.height =unit(2, "cm"),
               legend.key.width = unit(1,"cm"))
 
-ggsave(plot=plot, file="Figure_4_FRC_boxplot.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=3.5,width=7)
+ggsave(plot=plot, file="S7_FRC_boxplot.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=3.5,width=7)
 
 plot
 
@@ -587,40 +474,9 @@ plot <- boxplot_DCT_Shannon_Entropy & theme(panel.border = element_rect(size=1.5
               legend.key.height =unit(2, "cm"),
               legend.key.width = unit(1,"cm"))
 
-ggsave(plot=plot, file="Figure_4_DCT-Shannon-Entropy_boxplot.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=3.5,width=7)
+ggsave(plot=plot, file="S7_DCT-Shannon-Entropy_boxplot.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=3.5,width=7)
 
 plot
-
-```
-
-#### Supp. Figure 3 - Comparing illuminations
-```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=4,fig.width=8}
-
-data_to_plot <- data_full %>%
-  filter(measured %in% c("FRC-ROI-left","FRC-ROI-right")) %>%
-  mutate(name = paste(measured,illu, sep="_")) %>%
-  filter(slice_norm_micro < 100 & slice_norm_micro > -100)
-
-FRC_ROIs_plot <- data_to_plot %>%
-  line_plot(.,"slice_norm_micro","value","µm (relative to center)","FRC-QE score","illu")+
-  facet_wrap(~measured,scales="free")
-
-
-patch <- FRC_ROIs_plot
-
-
-#plot
-plot <- patch & 
-    theme(panel.border = element_rect(size=1.5),
-              axis.text = element_text(face="bold",size=12),
-              strip.text = element_text(face="bold",size=14)
-              ) &
-    scale_color_manual(values = wes_palette("Moonrise3"))
-
-ggsave(plot=plot, file="Supp_Figure_3.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
-
-plot
-
 
 ```
 
@@ -650,3 +506,4 @@ ggplot(data_to_plot, aes(y=value, x=slice_norm_micro, color=replicates))+
 
 
 ```
+

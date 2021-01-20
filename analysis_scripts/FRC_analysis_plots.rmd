@@ -29,7 +29,7 @@ library(wesanderson) # shiny colors
 #### Code to import data
 ```{r, echo=TRUE, warning=FALSE}
 
-
+#to run properly the script has to be in a folder that contains the folder "data" with all quantifications
 list_data_csvs <- list.files(here("data"),".+csv$",include.dirs= FALSE)
 
 read_data <- function(files){
@@ -177,12 +177,12 @@ plot <- all_plot & theme(panel.border = element_rect(size=2),
               panel.grid.major = element_blank(), # get rid of major grid
               panel.grid.minor = element_blank(), # get rid of minor grid
               ) &
-        scale_color_manual(values = wes_palette("Darjeeling1"))
+        scale_color_brewer(palette = "Set2")
 
 
-ggsave(plot=plot, file="AN_Figure_1_lineplots.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=3,width=10)
+ggsave(plot=plot, file="AN_Figure_1_lineplots.png", type = "cairo-png",  bg = "transparent",dpi = 1800,height=3,width=10)
 
-
+plot
 ```
 
 

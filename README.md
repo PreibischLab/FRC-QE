@@ -16,7 +16,7 @@ bioRxiv 2020.09.10.291286; doi: https://doi.org/10.1101/2020.09.10.291286
 ### Content
 
 
-[* _**1.	Introduction & Overview**_](#introduction)
+* [_**1.	Introduction & Overview**_](#introduction)
 * _**2.	Download**_
 * _**3.	Running FRC-QE**_
 * _**4. Output**_

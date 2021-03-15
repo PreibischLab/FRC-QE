@@ -17,11 +17,11 @@ bioRxiv 2020.09.10.291286; doi: https://doi.org/10.1101/2020.09.10.291286
 
 
 * [_**1.	Introduction & Overview**_](#introduction)
-* _**2.	Download**_
-* _**3.	Running FRC-QE**_
-* _**4. Output**_
-* _**5.	Automating FRC-QE**_
-* _**6.	Background**_
+* [_**2.	Download**_](#download)
+* [_**3.	Running FRC-QE**_](#running)
+* [_**4. Output**_](#output)
+* [_**5.	Automating FRC-QE**_](#automating)
+* [_**6.	Background**_](#background)
 
 <br />
 <br />
@@ -38,7 +38,7 @@ We base our algorithm on previous work regarding the use of Fourier ring correla
 <br />
 
 ### 2.	Download
-
+ <a name="download">
 The FRC-QE plugin is part of the BigStitcher update site that can be downloaded via the Fiji Updater. Go to ```Help > Update …```, click ```Manage update sites``` and select BigStitcher in the list. Then click ```“Apply changes”``` and restart Fiji. You will now find the FRC-QE plugin under ```Plugins```.
 
 The source code is available on [GitHub](https://github.com/PreibischLab/quality-estimation). If you encounter bugs or want to report a feature request, please report everything there.
@@ -46,12 +46,12 @@ The source code is available on [GitHub](https://github.com/PreibischLab/quality
 <br />
 
 Test data that we acquired to benchmark the method can be downloaded [here](https://www.bit.ly/FRC-QE_example_data).
-
+</a>
 <br />
 <br />
 
 ### 3.	Running FRC-QE
-
+ <a name="running">
 <br />
 
 _**Tutorial video**_
@@ -85,6 +85,7 @@ First, you have to decide on which part of the 3D stack you want to run FRC-QE. 
 
 <br />
 
+
 #### _Parameters that have to be defined:_
 
 * _**FFT size (xy):**_
@@ -106,9 +107,11 @@ If activated, the plugin will additionally create a new image that displays the 
 
 <br />
 <br />
+</a>
+
 
 ### 4. Output
-
+<a name="output">
 Once FRC-QE has been calculated for your image stack, two new windows will pop up:
 
 * _**A.	Image Quality Plot**_
@@ -142,16 +145,18 @@ _**Example video comparing FRC for two cleared organoids**_
 <br />
 
 <a href="https://vimeo.com/458136065"><img src="https://github.com/PreibischLab/FRC-QE/blob/master/screenshots/video2.png" alt="https://vimeo.com/458161930" width="512"/></a>
+</a>
 
 ### 5.	Automating FRC-QE
-
+<a name="automating">
 The FRC-QE is fully scriptable, so that you can run it on multiple images at once, e.g. to compare protocols or imaging parameters. An example macro for automated analysis of multiple images can be found [here](https://github.com/PreibischLab/FRC-QE/blob/master/FRC-QE_automated_macro.ijm). Example notebooks in R for processing the data are available [here](https://github.com/PreibischLab/FRC-QE/tree/master/analysis_scripts).
 
 <br />
 <br />
+</a>
 
 #### 6. Background:
-
+<a name="background">
 * *(1) Heel, Marin Van. “Similarity Measures between Images.” Ultramicroscopy 21, no. 1 (1987): 95–100. https://doi.org/10.1016/0304-3991(87)90010-6.*
 
 * *(2) Saxton, W. O., and W. Baumeister. “The Correlation Averaging of a Regularly Arranged Bacterial Cell Envelope Protein.” Journal of Microscopy 127, no. 2 (August 1982): 127–38. https://doi.org/10.1111/j.1365-2818.1982.tb00405.x.*
@@ -165,5 +170,5 @@ The FRC-QE is fully scriptable, so that you can run it on multiple images at onc
 
 * *(6) Royer, Loïc A, William C Lemon, Raghav K Chhetri, Yinan Wan, Michael Coleman, Eugene W Myers, and Philipp J Keller. “Adaptive Light-Sheet Microscopy for Long-Term, High-Resolution Imaging in Living Organisms.” Nature Biotechnology, no. October (2016). https://doi.org/10.1038/nbt.3708.*
 
-
+</a>
 </div>

@@ -29,11 +29,12 @@ bioRxiv 2020.09.10.291286; doi: https://doi.org/10.1101/2020.09.10.291286
 <div style="text-align: justify">
  
  ### 1.	Introduction & Overview
- <a name="introduction">
+<a name="introduction">
+</a>
 The Fourier ring correlation quality estimate (FRC-QE) is a measure for robustly estimating depth-dependent differences in image quality within three-dimensional image stacks. Specifically, this tool was designed to provide users with a robust metric when assessing efficiency of different optical clearing methods in brain organoids. However, the tool can be used on any kind fluorescent microscopy image, i.e. where users want to compare image quality across the whole stack.
 
 We base our algorithm on previous work regarding the use of Fourier ring correlation in electron _(1,2)_ and fluorescent microscopy _(3-5)_. Generally, correlating frequencies of two images describing the same object can be used to estimate the resolution of these images. We take advantage of the fact that consecutive image planes along the z-axis are very similar due to the axial extent of the PSF. Hence, integrating the correlation between two z-slices over all frequencies gives a robust quality metric, with low frequency correlation indicating low image quality.
-</a>
+
 <br />
 <br />
 
@@ -51,7 +52,8 @@ Test data that we acquired to benchmark the method can be downloaded [here](http
 <br />
 
 ### 3.	Running FRC-QE
- <a name="running">
+<a name="running">
+</a>
 <br />
 
 _**Tutorial video**_
@@ -112,6 +114,7 @@ If activated, the plugin will additionally create a new image that displays the 
 
 ### 4. Output
 <a name="output">
+</a>
 Once FRC-QE has been calculated for your image stack, two new windows will pop up:
 
 * _**A.	Image Quality Plot**_
@@ -145,10 +148,12 @@ _**Example video comparing FRC for two cleared organoids**_
 <br />
 
 <a href="https://vimeo.com/458136065"><img src="https://github.com/PreibischLab/FRC-QE/blob/master/screenshots/video2.png" alt="https://vimeo.com/458161930" width="512"/></a>
-</a>
+
 
 ### 5.	Automating FRC-QE
 <a name="automating">
+</a>
+ 
 The FRC-QE is fully scriptable, so that you can run it on multiple images at once, e.g. to compare protocols or imaging parameters. An example macro for automated analysis of multiple images can be found [here](https://github.com/PreibischLab/FRC-QE/blob/master/FRC-QE_automated_macro.ijm). Example notebooks in R for processing the data are available [here](https://github.com/PreibischLab/FRC-QE/tree/master/analysis_scripts).
 
 <br />

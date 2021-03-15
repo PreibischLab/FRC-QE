@@ -10,8 +10,8 @@ _**For further details have a look at the paper:**_
 <br />
 
 _**FRC-QE: A robust and comparable 3D microscopy image quality metric for cleared organoids**_
-Friedrich Preusser*, Natália dos Santos*, Jörg Contzen, Harald Stachelscheid, Érico Tosoni Costa, Philipp Mergenthaler, Stephan Preibisch
-bioRxiv 2020.09.10.291286; doi: https://doi.org/10.1101/2020.09.10.291286 
+_Friedrich Preusser*, Natália dos Santos*, Jörg Contzen, Harald Stachelscheid, Érico Tosoni Costa, Philipp Mergenthaler#, Stephan Preibisch#
+Bioinformatics, 2021, https://doi.org/10.1093/bioinformatics/btab160_
 
 ### Content
 

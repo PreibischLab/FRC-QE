@@ -153,12 +153,12 @@ The FRC-QE is fully scriptable, so that you can run it on multiple images at onc
 
 <br />
 <br />
-</a>
+
 
 #### 6. Background:
 
 <a name="background">
- 
+</a>
  
 
 * *(1) Heel, Marin Van. “Similarity Measures between Images.” Ultramicroscopy 21, no. 1 (1987): 95–100. https://doi.org/10.1016/0304-3991(87)90010-6.*

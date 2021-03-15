@@ -48,7 +48,7 @@ The source code is available on [GitHub](https://github.com/PreibischLab/quality
 
 <br />
 
-Test data that we acquired to benchmark the method can be downloaded [here](https://www.bit.ly/FRC-QE_example_data).
+Test data that we acquired to benchmark the method can be downloaded from zenodo [here](https://zenodo.org/record/4604685#.YE-b8-Yo-u4).
 <br />
 <br />
 

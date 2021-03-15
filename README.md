@@ -156,7 +156,9 @@ The FRC-QE is fully scriptable, so that you can run it on multiple images at onc
 </a>
 
 #### 6. Background:
+
 <a name="background">
+ 
 * *(1) Heel, Marin Van. “Similarity Measures between Images.” Ultramicroscopy 21, no. 1 (1987): 95–100. https://doi.org/10.1016/0304-3991(87)90010-6.*
 
 * *(2) Saxton, W. O., and W. Baumeister. “The Correlation Averaging of a Regularly Arranged Bacterial Cell Envelope Protein.” Journal of Microscopy 127, no. 2 (August 1982): 127–38. https://doi.org/10.1111/j.1365-2818.1982.tb00405.x.*

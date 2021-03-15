@@ -15,7 +15,8 @@ bioRxiv 2020.09.10.291286; doi: https://doi.org/10.1101/2020.09.10.291286
 
 ### Content
 
-* _**1.	Introduction & Overview**_
+
+* _**1.	Introduction & Overview**_(#introduction)
 * _**2.	Download**_
 * _**3.	Running FRC-QE**_
 * _**4. Output**_
@@ -27,12 +28,13 @@ bioRxiv 2020.09.10.291286; doi: https://doi.org/10.1101/2020.09.10.291286
 
 <div style="text-align: justify">
  
+ <a name="introduction">
 ### 1.	Introduction & Overview
 
 The Fourier ring correlation quality estimate (FRC-QE) is a measure for robustly estimating depth-dependent differences in image quality within three-dimensional image stacks. Specifically, this tool was designed to provide users with a robust metric when assessing efficiency of different optical clearing methods in brain organoids. However, the tool can be used on any kind fluorescent microscopy image, i.e. where users want to compare image quality across the whole stack.
 
 We base our algorithm on previous work regarding the use of Fourier ring correlation in electron _(1,2)_ and fluorescent microscopy _(3-5)_. Generally, correlating frequencies of two images describing the same object can be used to estimate the resolution of these images. We take advantage of the fact that consecutive image planes along the z-axis are very similar due to the axial extent of the PSF. Hence, integrating the correlation between two z-slices over all frequencies gives a robust quality metric, with low frequency correlation indicating low image quality.
-
+</a>
 <br />
 <br />
 

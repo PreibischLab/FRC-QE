@@ -103,7 +103,7 @@ The step size defines the number of slices that will be used for the analysis. D
 
 * _**Relative FRC distance:**_
 
-This number defines the relative positioning of the control slice that will be used to estimate unspecific high-frequency noise such as camera noise. This noise will be subtracted from the final result in each slice. This number should be large enough so that slices do not share biological meaningful structures so that everything that correlates at high frequencies in Fourier space can be assumed to be unspecific noise. Hence, this number will depend on you imaging settings, your PSF and the type of staining. Default is 10.
+This number defines the relative positioning of the control slice that will be used to estimate unspecific high-frequency noise such as camera noise. This noise will be subtracted from the final result in each slice. This number should be large enough so that slices do not share biological meaningful structures so that everything that correlates at high frequencies in Fourier space can be assumed to be unspecific noise. Hence, this number will depend on your imaging settings, your PSF and the type of staining. Default is 10.
 
 Visualize result as image:
 If activated, the plugin will additionally create a new image that displays the individual blocks colored by a grey value that corresponds to their respective FRC-QE score. You can overlay this image with the original input image for visual control of the result. 

@@ -17,6 +17,7 @@ import bdv.tools.boundingbox.TransformedBoxSelectionDialog;
 import bdv.tools.boundingbox.TransformedBoxSelectionDialog.Result;
 import bdv.util.Bdv;
 import bdv.util.BdvFunctions;
+import bdv.util.BdvHandle;
 import bdv.util.BdvOptions;
 import bdv.util.BdvStackSource;
 import ij.IJ;
@@ -518,15 +519,20 @@ public class Estimate_Quality implements PlugIn
 
 		final BoxSelectionOptions bboptions = new BoxSelectionOptions().title( "Select 3D area" );
 
+		InputTriggerConfig keyConfig = bboptions.values.getInputTriggerConfig();
+		if ( keyConfig == null )
+			keyConfig = new InputTriggerConfig();
+
 		final TransformedBoxSelectionDialog dialog =
 				new TransformedBoxSelectionDialog(
 						preview.getBdvHandle().getViewerPanel(),
-						preview.getBdvHandle().getSetupAssignments(),
+						preview.getBdvHandle().getConverterSetups(),
+						BdvFunctions.getUnusedSetupId( preview.getBdvHandle().getSetupAssignments() ),
 						new InputTriggerConfig(),
 						preview.getBdvHandle().getTriggerbindings(),
 						new AffineTransform3D(), initialInterval, rangeInterval, bboptions );
 
-		dialog.setVisible( true );
+		//dialog.setVisible( true );
 
 		final Result result = dialog.getResult();
 

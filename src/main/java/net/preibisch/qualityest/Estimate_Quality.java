@@ -34,10 +34,12 @@ import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.KDTree;
 import net.imglib2.Point;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converter;
 import net.imglib2.converter.Converters;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.multithreading.SimpleMultiThreading;
 import net.imglib2.neighborsearch.NearestNeighborSearch;
 import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -220,11 +222,118 @@ public class Estimate_Quality implements PlugIn
 		}
 		else
 		{
+			//computeSSIM(Views.interval( (RandomAccessibleInterval)ImageJFunctions.wrapReal( imp ), frcInterval), imp.getTitle() );
 			computeShannon( Views.interval( (RandomAccessibleInterval)ImageJFunctions.wrapReal( imp ), frcInterval), methodChoice, imp.getTitle() );
 		}
 
 	}
 
+	public < T extends RealType< T > > void computeSSIM( final RandomAccessibleInterval< T > input, final String name )
+	{
+		final ResultsTable rt = new ResultsTable();
+		float[] x = new float[ (int)input.dimension( 2 ) - 1 ]; // x-coordinates
+		float[] y = new float[ (int)input.dimension( 2 ) - 1 ]; // y-coordinates
+
+		double max = -Double.MAX_VALUE;
+		double min = Double.MAX_VALUE;
+
+		IJ.showProgress(0, (int)input.dimension( 2 ) );
+
+		for ( int z = 0; z < input.dimension( 2 ) - 1; ++z )
+		{
+			final RandomAccessibleInterval< T >  sliceA = Views.hyperSlice( input, 2, z );
+			final RandomAccessibleInterval< T >  sliceB = Views.hyperSlice( input, 2, z + 1 );
+
+			final double value = getCorrelation( sliceA, sliceB );
+
+			System.out.println( value );
+
+			IJ.showProgress(z, (int)input.dimension( 2 ) );
+
+			min = 0.8;//Math.min( value, min );
+			max = Math.max( value, max );
+
+			x[ z ] = z;
+			y[ z ] = (float)value;
+
+			rt.incrementCounter();
+			rt.addValue( "z", z );
+			rt.addValue( "quality", value );
+		}
+
+		IJ.showProgress(1.0);
+
+		rt.show("Image Quality (SSIM)");
+
+		PlotWindow.noGridLines = false; // draw grid lines
+		Plot plot = new Plot("Image Quality (SSIM) " + name,"z Position","Quality",x,y);
+		plot.setLimits( input.min( 2 ), input.max( 2 ), Math.min( 0, min ), max );
+		plot.setLineWidth(2);
+		plot.show();
+	}
+
+	public static <T extends RealType<T>> double getMean(RandomAccessibleInterval<T> img)
+	{
+		// TODO: if #pixels > ???? else RealSum
+		// TODO: integral image?
+		double sum = 0.0;
+		long n = 0;
+		for (T pix: Views.iterable(img)){
+			sum += pix.getRealDouble();
+			n++;
+		}
+		return sum/n;
+	}
+	public static <T extends RealType<T>, S extends RealType<S>> double getCorrelation (
+			final RandomAccessibleInterval<T> img1, final RandomAccessibleInterval<S> img2)
+	{
+		final double m1 = getMean(img1);
+		final double m2 = getMean(img2);
+
+		// square sums
+		double sum11 = 0.0, sum22 = 0.0, sum12 = 0.0; 
+
+		final Cursor<T> c1 = Views.iterable(img1).cursor();
+
+		if (Views.iterable( img1 ).iterationOrder().equals( Views.iterable( img2 ).iterationOrder() ))
+		{
+			final Cursor< S > c2 = Views.iterable( img2 ).cursor();
+			while (c1.hasNext()){
+				final double c = c1.next().getRealDouble();
+				final double r = c2.next().getRealDouble();
+
+				sum11 += (c - m1) * (c - m1);
+				sum22 += (r - m2) * (r - m2);
+				sum12 += (c - m1) * (r - m2);
+			}
+		}
+		else
+		{
+			final RandomAccess<S> r2 = img2.randomAccess();
+			while (c1.hasNext()){
+				final double c = c1.next().getRealDouble();
+				r2.setPosition(c1);
+				final double r = r2.get().getRealDouble();
+
+				sum11 += (c - m1) * (c - m1);
+				sum22 += (r - m2) * (r - m2);
+				sum12 += (c - m1) * (r - m2);
+			}
+		}
+
+		// all pixels had the same color....
+		if (sum11 == 0 || sum22 == 0)
+		{
+			// having the same means and same sums means the overlapping area was simply identically the same color
+			// this is most likely an artifact and we return 0
+			/* if ( sum11 == sum22 && m1 == m2 )
+				return 1;
+			else */
+				return 0;
+		}
+
+		return sum12 / Math.sqrt(sum11 * sum22);
+	}
 	public < T extends RealType< T > > void computeShannon( final RandomAccessibleInterval< T > input, final int methodChoice, final String name )
 	{
 		final FocusMeasureInterface measure;
@@ -437,7 +546,7 @@ public class Estimate_Quality implements PlugIn
 		final ImagePlus imp;
 
 		if ( args == null || args.length == 0 )
-			imp = new ImagePlus( "/Users/spreibi/Downloads/organoid/for friedrich/ang1_ill1.tif" );
+			imp = new ImagePlus( "/Users/spreibi/Documents/BIMSB/Publications/Clearing Paper/anisotropic_FRC_example/Fructose_org4.tif" );
 		else
 			imp = new ImagePlus( args[ 0 ] );
 
@@ -445,7 +554,7 @@ public class Estimate_Quality implements PlugIn
 
 		imp.show();
 		imp.setSlice( imp.getNSlices() / 2 );
-		imp.setRoi( new Rectangle( 10, 10, 200, 200 ) );
+		imp.setRoi( new Rectangle( 10, 10, 256, 256 ) );
 
 		Estimate_Quality.defaultAreaChoice = 0;
 		new Estimate_Quality().run( null );

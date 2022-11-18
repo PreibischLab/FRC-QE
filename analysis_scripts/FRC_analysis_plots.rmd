@@ -15,27 +15,22 @@ library(patchwork) # put plots together
 library(wesanderson) # shiny colors
 ```
 
-### Code by Friedrich Preusser (github.com/Fritze/)
-#### All organoids acquired with Z1 lightsheet (August 2019).
-#### Data shown here is all from *Draq5* channel.
+##### *Code by Friedrich Preusser (github.com/Fritze)*
+##### All organoids acquired with Z1 lightsheet (August 2019).
+##### Data shown here is all from *Draq5* channel.
 ###### --- 
-###### 1. Multiview recontruction based on Draq5 signal.
-###### 2. 400x400 bounding box through full z.
-###### 3. Fuse (no downsampling, keeping anisotropy) and save.
-###### 4. Create new .hdf5 based on this small image and open in new project
-###### 5. FRC (no downsampling) with relative FRC, **FFT size 200**, **stepsize=1** and **not keeping anisotropy** (FFT size 400 for confocal data)
-###### - this will create 4 sub-tiles where FRC is calculated independently
-###### - to assess FRC quality we always take the median of these 4 subtiles
-###### 6. For both Img and FRC measurements: Measurement per slice.
+###### 1. Multiview recontruction based on Draq5 signal (nuclei as interest points).
+###### 2. 400x400 bounding box through full z (for confocal: 800x800 px).
+###### 3. FRC-QE, **FFT size 200**, **stepsize=1** 
+###### 4. For all measurements: Measurement per slice.
 
 ### Select a tab to view it's content   {.tabset}
 
 #### Code to import data
 ```{r, echo=TRUE, warning=FALSE}
 
-
+#to run properly the script has to be in a folder that contains the folder "data" with all quantifications
 list_data_csvs <- list.files(here("data"),".+csv$",include.dirs= FALSE)
-offset_rollingmedian <- 51
 
 read_data <- function(files){
   read.csv(files) %>%
@@ -50,8 +45,8 @@ read_data <- function(files){
   mutate(filename=basename(files)) %>%
   #extract angle
   mutate(angle=gsub(".+angle(\\d+).+","\\1",filename)) %>%
-  mutate(angle=ifelse(angle == 0, "right",angle)) %>%
-  mutate(angle=ifelse(angle == 1,"left",angle)) %>%
+  mutate(angle=ifelse(angle == 0, "180°",angle)) %>%
+  mutate(angle=ifelse(angle == 1,"0°",angle)) %>%
   #if angle information is missing in filename make it "both angles"
   mutate(angle = ifelse(grepl("angle",filename),angle,"both_angles")) %>%
   #extract illumination side
@@ -61,6 +56,9 @@ read_data <- function(files){
   mutate(illu=ifelse(illu == "fused","both_illuminations",illu)) %>%
   #if illumination information is missing in the filename make it "both_illuminations"
   mutate(illu = ifelse(grepl("illu",filename),illu,"both_illuminations")) %>%
+  #extract staining type 
+  #if staining information is missing in the filename make it "draq5"
+  mutate(staining = ifelse(grepl("mito",filename),"mitotracker","draq5")) %>%
   #all values (either quality or image feature measurements) should be named "value"
   rename_all(~sub('quality', 'value', .x)) %>%
   rename_all(~sub('mean','value',.x)) %>%
@@ -74,19 +72,18 @@ read_data <- function(files){
 
 data_full <- map_dfr(file.path(here("data"),list_data_csvs),read_data) %>% 
   rename(min_Img = min, max_Img = max) %>%
-  select(protocol,orgID,slice,angle,illu,measured, value,max_Img,min_Img) %>%
+  select(protocol,orgID,slice,angle,illu,staining,measured, value,max_Img,min_Img) %>%
   mutate(measured = ifelse(measured == "Img-features","mean-intensity",measured)) %>%
-  group_by(protocol,orgID,angle) %>%
+  group_by(protocol,orgID,illu,angle) %>%
   mutate(max_slice = max(slice)) %>%
   mutate(slice_norm = slice-max_slice/2) %>%
-  group_by(protocol,orgID,angle,illu,measured) %>%
+  group_by(protocol,orgID,angle,illu,staining,measured) %>%
   #contrast is just max minus minimum intensity at a given slice
   mutate(contrast = max_Img - min_Img) %>%
   mutate(contrast_norm = contrast / max(contrast)) %>%
   select(-c(max_Img,min_Img)) %>%
   #normalize all measured values between 0 and 1
   mutate(value_norm = value / max(value)) %>% 
-  group_by(slice,orgID,protocol,angle,illu) %>%
   ungroup() %>%
   arrange(protocol,orgID)
 
@@ -117,27 +114,17 @@ data_full <- data_full %>%
 ```
 
 
-
-
-#### Plot for Figure 2
-```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.width=12}
+#### Plot for APPLICATION NOTE Figure 1
+```{r, echo=TRUE, warning=FALSE,dpi = 600,fig.height=5,fig.width=10}
 
 #select organoid to plot
 selected_organoid <- "ScaleA2_org2"
 boundaries <- c(15,70,210,260)
 
-selected_slices <- c(7,60,134,220)
+# selected_slices <- c(7,60,134,220)
 
 
 boundaries_micron <- filter(data_full,slice %in% boundaries) %>%
-  #make name
-  mutate(name = paste0(protocol,"_",orgID)) %>%
-  #only the organoid we want to plot
-  filter(name == selected_organoid) %>%
-  distinct(slice_norm_micro) %>%
-  pull(slice_norm_micro)
-
-selected_slices_micron <- filter(data_full,slice %in% selected_slices) %>%
   #make name
   mutate(name = paste0(protocol,"_",orgID)) %>%
   #only the organoid we want to plot
@@ -154,111 +141,54 @@ rects <- data.frame(xmin = c(boundaries_micron[1],boundaries_micron[2],boundarie
 
 #filter data for plots
 data_to_plot <- data_full %>%
+  #only draq5 staining
+  filter(staining == "draq5") %>%
   #only multiview reconstructed images
   filter(angle == "both_angles") %>%
   #make name
   mutate(name = paste0(protocol,"_",orgID)) %>%
   #only the organoid we want to plot
-  filter(name == selected_organoid) 
+  filter(name == selected_organoid)  %>%
+  filter(measured %in% c("mean-intensity", "DCT-Shannon-entropy","FRC"))
 
-intensity_plot <- data_to_plot %>%
-  filter(measured == "mean-intensity") %>% 
-  ggplot(., aes_string(x="slice_norm_micro",y="value"))+
+all_plot <- ggplot(data_to_plot, aes_string(x="slice_norm_micro",y="value_norm",color="measured"))+
   # geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill), inherit.aes = FALSE, alpha = 0.15) +
-  geom_line(aes(color=name),size=1.5,color="black")  +
+  geom_line(aes(color=measured),size=1.5)  +
   geom_vline(xintercept=rects$xmin, size=0.3,alpha = 0.15) +
   geom_vline(xintercept=rects$xmax, size=0.3,alpha = 0.15) +
   theme_bw() +
-  labs(y = "pixel\nintensity")+
-  ggtitle("intensity") +
+  labs(y = "value (normalized)")+
   scale_x_continuous(limits = c(min(data_to_plot$slice_norm_micro),max(data_to_plot$slice_norm_micro)),
                      breaks = c(-300,-200,-100,0,100,200,300))+
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
-        plot.title = element_text(size=10))+
-  geom_vline(xintercept=selected_slices_micron,size=0.15,color="black")
-
-
-contrast_plot <- data_to_plot %>%
-  filter(measured == "mean-intensity") %>% 
-  ggplot(., aes_string(x="slice_norm_micro",y="contrast"))+
-  # geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill), inherit.aes = FALSE, alpha = 0.15) +
-  geom_line(aes(color=name),size=1.5,color="black")  +
-  geom_vline(xintercept=rects$xmin, size=0.3,alpha = 0.15) +
-  geom_vline(xintercept=rects$xmax, size=0.3,alpha = 0.15) +
-  theme_bw() +
-  labs(y="contrast")+
-  ggtitle("Contrast (raw)") +
-  scale_x_continuous(limits= c(min(data_to_plot$slice_norm_micro),max(data_to_plot$slice_norm_micro)),
-                     breaks = c(-300,-200,-100,0,100,200,300))+
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        plot.title = element_text(size=10))+
-  geom_vline(xintercept=selected_slices_micron,size=0.15,color="black")
-
-
-DCT_Shannon_entropy_plot <- data_to_plot %>%
-  filter(measured == "DCT-Shannon-entropy") %>%
-  ggplot(., aes_string(x="slice_norm_micro",y="value"))+
-  #geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill), inherit.aes = FALSE, alpha = 0.15) +
-  geom_line(aes(color=name),size=1.5,color="black")  +
-  geom_vline(xintercept=rects$xmin, size=0.3,alpha = 0.15) +
-  geom_vline(xintercept=rects$xmax, size=0.3,alpha = 0.15) +
-  theme_bw() +
-  labs(y="DCT shannon entropy",x="µm (relative to center)") +
-  ggtitle("DCT shannon entropy") +
-  scale_x_continuous(limits= c(min(data_to_plot$slice_norm_micro),max(data_to_plot$slice_norm_micro)),
-                     breaks = c(-300,-200,-100,0,100,200,300))+
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        plot.title = element_text(size=10))+
-  geom_vline(xintercept=selected_slices_micron,size=0.15,color="black")
- 
-
-
-FRC_plot_relative <- data_to_plot %>%
-  filter(measured == "FRC") %>%
-  ggplot(., aes_string(x="slice_norm_micro",y="value"))+
-  #geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill), inherit.aes = FALSE, alpha = 0.15) +
-  geom_line(aes(color=name),size=1.5,color="black")  +
-  geom_vline(xintercept=rects$xmin, size=0.3,alpha = 0.15) +
-  geom_vline(xintercept=rects$xmax, size=0.3,alpha = 0.15) +
-  theme_bw() +
-  ggtitle("FRC-QE score") +
-  scale_x_continuous(limits= c(min(data_to_plot$slice_norm_micro),max(data_to_plot$slice_norm_micro)),
-                     breaks = c(-300,-200,-100,0,100,200,300))+
-  theme(plot.title = element_text(size=10))+
-  geom_vline(xintercept=selected_slices_micron,size=0.15,color="black")
+        plot.title = element_text(size=10))
 
 
 
 
-
-#put all plots together
-patch <- (intensity_plot  / contrast_plot  / DCT_Shannon_entropy_plot / FRC_plot_relative )
 
 #plot
-plot <- patch & theme(panel.border = element_rect(size=2),
+plot <- all_plot & theme(panel.border = element_rect(size=2),
+              axis.ticks = element_line(colour = "black", size = 1.5),
               axis.text = element_text(face="bold",size=12),
               panel.background = element_rect(fill = "transparent"), # bg of the panel
               plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
               panel.grid.major = element_blank(), # get rid of major grid
               panel.grid.minor = element_blank(), # get rid of minor grid
-              )
+              ) &
+        scale_color_brewer(palette = "Set2")
 
 
-ggsave(plot=plot, file="Figure_2_lineplots.png", type = "cairo-png",  bg = "transparent",dpi = 300,width=12)
-
+ggsave(plot=plot, file="AN_Figure_1_lineplots.png", type = "cairo-png",  bg = "transparent",dpi = 1800,height=3,width=10)
 
 plot
 ```
 
 
-
-
-#### Figure 3 - lightsheet data
-
+#### Supplemental Figure 4 - Comparing illuminations
 ```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=4,fig.width=8}
+
 #define line plot function for the following figures
 line_plot <- function(data_to_plot,X,Y,xlab,ylab,colorby){
   ggplot(data_to_plot, aes_string(x=X,y=Y,group="name"))+
@@ -269,6 +199,38 @@ line_plot <- function(data_to_plot,X,Y,xlab,ylab,colorby){
     theme(legend.position = "top")
 }
 
+data_to_plot <- data_full %>%
+  filter(measured %in% c("FRC-ROI-left","FRC-ROI-right")) %>%
+  mutate(name = paste(measured,illu, sep="_")) %>%
+  filter(slice_norm_micro < 100 & slice_norm_micro > -100)
+
+FRC_ROIs_plot <- data_to_plot %>%
+  line_plot(.,"slice_norm_micro","value","µm (relative to center)","FRC-QE score","illu")+
+  facet_wrap(~measured,scales="free")
+
+
+patch <- FRC_ROIs_plot
+
+
+#plot
+plot <- patch & 
+    theme(panel.border = element_rect(size=1.5),
+              axis.text = element_text(face="bold",size=12),
+              strip.text = element_text(face="bold",size=14)
+              ) &
+    scale_color_manual(values = wes_palette("Moonrise3"))
+
+ggsave(plot=plot, file="S4_illuminations.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
+
+plot
+
+
+```
+
+
+#### Supplemental Figure S5 - Multi-view quality estimation
+```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=4,fig.width=8}
+
 unfused_examples <- data_full %>%
   mutate(name = paste0(protocol,"_",orgID)) %>%
   filter(!grepl("both_angles",angle)) %>% 
@@ -278,6 +240,8 @@ unfused_examples <- data_full %>%
 selected_slices_micron <- c(0,200)
 
 data_to_plot <- data_full %>%
+  #only draq5 staining
+  filter(staining == "draq5") %>%
   mutate(name = paste0(protocol,"_",orgID)) %>%
   filter(name %in% unfused_examples) %>%
   filter(!grepl("ScaleA2",name)) %>% 
@@ -286,12 +250,13 @@ data_to_plot <- data_full %>%
   mutate(name = paste0(protocol,"_",orgID)) %>%
   mutate(microns_from_start = slice * stepsize) %>%
   mutate(angle = ifelse(!grepl("both_angles",angle),angle,"multiview fusion")) %>%
-  filter(measured == "FRC") %>% 
-  #filter out slices with value == 0
-  filter(value > 0)
+  filter(measured == "FRC")
+
+#fixing the order
+data_to_plot$angle_ordered <- factor(data_to_plot$angle, levels=c("0°","multiview fusion", "180°"))
 
 FRC_plot <- line_plot(data_to_plot,"slice_norm_micro","value","µm (relative to center)","FRC-QE score","name") +
-  facet_grid(~angle,scale="free_x") +
+  facet_grid(~angle_ordered,scale="free_x") +
   scale_y_continuous(limits=c(0, max(data_to_plot$value)))
 
 
@@ -308,13 +273,13 @@ plot <- patch &
     scale_color_manual(values = wes_palette("Moonrise3")) &
     geom_vline(xintercept=selected_slices_micron,linetype='dashed',size=0.8,color="red") 
 
-ggsave(plot=plot, file="Figure_3_lightsheet.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
+ggsave(plot=plot, file="S5_lightsheet.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
 
 plot
 
 ```
 
-#### Figure 4 - confocal data
+#### Supplemental Figure S6 - Confocal microscopy
 ```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=4,fig.width=8}
 
 replicates_and_corresponding_orgIDs <- data.frame(protocol =
@@ -337,8 +302,7 @@ data_to_plot <- data_full %>%
 
 FRC_plot <- data_to_plot %>%
   filter(measured == "FRC") %>% 
-  line_plot(.,"microns_from_start","value","µm inside","FRC-QE score","replicates")+
-    geom_hline(yintercept=15,linetype='dashed',size=0.8,color="black",alpha=0.7)
+  line_plot(.,"microns_from_start","value","µm inside","FRC-QE score","replicates")
 
 
 
@@ -354,7 +318,7 @@ plot <- patch &
               ) &
     scale_color_manual(values = wes_palette("Moonrise3"))
 
-ggsave(plot=plot, file="Figure_3_confocal.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
+ggsave(plot=plot, file="S6_confocal.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
 
 plot
 
@@ -362,9 +326,7 @@ plot
 
 
 
-
-
-#### Line Plots for Figure 4
+#### Supplemental Figure S7 - Comparing across protocols
 ```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=8,fig.width=16}
 
 selected_slices_micron <- c(-200,0)
@@ -384,7 +346,12 @@ replicates_and_corresponding_orgIDs <- data.frame(protocol = c("ClearT2","ClearT
 
 data_to_plot <- data_full %>%
   left_join(replicates_and_corresponding_orgIDs,by=c("orgID","protocol")) %>%
+  #only fused angles
   filter(angle == "both_angles") %>%
+  #only both illuminations
+  filter(illu == "both_illuminations") %>%
+  #only draq5 staining
+  filter(staining == "draq5") %>%
   mutate(name = paste0(protocol,"_",orgID)) %>%
   #filter out confocal data
   filter(!grepl("orgconf",orgID))
@@ -422,13 +389,13 @@ plot <- patch &
     scale_color_manual(values = wes_palette("Moonrise3")) &
     geom_vline(xintercept=selected_slices_micron,linetype='dashed',size=0.8,color="red")
 
-ggsave(plot=plot, file="Figure_4_lineplots.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=8,width=16)
+ggsave(plot=plot, file="S7_lineplots.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=8,width=16)
 
 plot
 
 ```
 
-#### Box Plot for Figure 4
+#### Box Plot for Supplemental Figure 7
 ```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=3.5,fig.width=7}
 #make sampling reproducible
 set.seed(2020)
@@ -436,6 +403,12 @@ set.seed(2020)
 #take data_to_plot dataframe from previous chunk
 #and select 200 slices per experiment (x 3 replicates x 3 protocols = 1800 slices in total)
 selected_slices <- data_to_plot %>%
+  #only fused angles
+  filter(angle == "both_angles") %>%
+  #only both illuminations
+  filter(illu == "both_illuminations") %>%
+  #only draq5 staining
+  filter(staining == "draq5") %>%
   mutate(name_slice = paste0(name,"_",slice)) %>%
   group_by(orgID,protocol) %>%
   sample_n(200) %>%
@@ -452,9 +425,9 @@ boxplot_FRC <- ggplot(data_to_plot2_FRC, aes(y=value,x=protocol,group=protocol,f
   geom_boxplot(width=0.25,size=1,alpha=.3,outlier.alpha = 1) +
   scale_y_continuous(limits=c(0,max(data_to_plot2_FRC$value + 20)))+
   geom_signif(comparisons = list(c("Fructose", "ScaleA2"),c("ClearT2","Fructose")), 
-              map_signif_level=TRUE,y_position = c(74, 81),test = "wilcox.test",size=1)+
+              map_signif_level=TRUE,y_position = c(52, 57),test = "wilcox.test",size=1)+
   geom_signif(comparisons = list(c("ClearT2","ScaleA2")),
-              map_signif_level = TRUE,y_position=c(88),test = "wilcox.test",size=1)+
+              map_signif_level = TRUE,y_position=c(62),test = "wilcox.test",size=1)+
   labs(x="protocol", y="FRC") +
   scale_colour_discrete(name = "Organoid ID") +
   theme_bw() +
@@ -491,7 +464,7 @@ plot <- boxplot_FRC & theme(panel.border = element_rect(size=1.5),
               legend.key.height =unit(2, "cm"),
               legend.key.width = unit(1,"cm"))
 
-ggsave(plot=plot, file="Figure_4_FRC_boxplot.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=3.5,width=7)
+ggsave(plot=plot, file="S7_FRC_boxplot.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=3.5,width=7)
 
 plot
 
@@ -501,47 +474,36 @@ plot <- boxplot_DCT_Shannon_Entropy & theme(panel.border = element_rect(size=1.5
               legend.key.height =unit(2, "cm"),
               legend.key.width = unit(1,"cm"))
 
-ggsave(plot=plot, file="Figure_4_DCT-Shannon-Entropy_boxplot.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=3.5,width=7)
+ggsave(plot=plot, file="S7_DCT-Shannon-Entropy_boxplot.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=3.5,width=7)
 
 plot
 
 ```
 
-#### Supp. Figure 3 - Comparing illuminations at different positions
-```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=4,fig.width=8}
-#define line plot function for the following figures
-line_plot <- function(data_to_plot,X,Y,xlab,ylab,colorby){
-  ggplot(data_to_plot, aes_string(x=X,y=Y,group="name"))+
-    geom_line(aes_string(color=colorby),size=1) + 
-    labs(x=xlab, y=ylab) +
-    facet_grid(~measured,scale="free_x")+
-    theme_bw() +
-    theme(legend.position = "top")
-}
 
+```{r, echo=TRUE, warning=FALSE,dpi = 300,fig.height=8,fig.width=16}
+
+# library(reshape2)
 data_to_plot <- data_full %>%
-  filter(measured %in% c("FRC-ROI-left","FRC-ROI-right")) %>%
-  mutate(name = paste(measured,illu, sep="_"))
+  left_join(replicates_and_corresponding_orgIDs,by=c("orgID","protocol")) %>%
+  mutate(name = paste(protocol, orgID, sep="_")) %>%
+  filter(protocol == "ScaleA2") %>%
+  filter(measured == "BRISQUE" | measured == "FRC") %>%
+  filter(angle == "both_angles") %>%
+  filter(illu == "both_illuminations") %>%
+  filter(slice_norm_micro < 100 & slice_norm_micro > -100)
 
-FRC_ROIs_plot <- data_to_plot %>%
-  line_plot(.,"slice_norm_micro","value","test","test1","illu")+
-    labs(y="FRC-QE score",x="µm (relative to center)")
+s <- filter(data_to_plot, measured == "FRC")
+max(s$value)
 
-
-patch <- FRC_ROIs_plot
-
-
-#plot
-plot <- patch & 
-    theme(panel.border = element_rect(size=1.5),
-              axis.text = element_text(face="bold",size=12),
-              strip.text = element_text(face="bold",size=14)
-              ) &
-    scale_color_manual(values = wes_palette("Moonrise3"))
-
-ggsave(plot=plot, file="Supp_Figure_3.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
-
-plot
+ggplot(data_to_plot, aes(y=value, x=slice_norm_micro, color=replicates))+
+  geom_line(size=1.25)+
+  facet_wrap(~measured, scales="free_y")+
+  theme_classic()+
+   scale_color_manual(values = wes_palette("Moonrise3"))+
+  expand_limits(y = 0)+
+  ggsave(file="FRC-brisque_comparison_ScaleA2.png", type = "cairo-png",  bg = "transparent",dpi = 300,height=4,width=8)
 
 
 ```
+
